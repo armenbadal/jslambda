@@ -44,6 +44,13 @@ var If = function(condition, decision, alternative) {
     this.alternative = alternative
 }
 
+var Lambda = function(params, body) {
+    Expression.call(this, 'F')
+    this.parameters = params
+    this.body = body
+}
+
+
 
 module.exports.Expression = Expression
 module.exports.Real = Real
@@ -53,3 +60,4 @@ module.exports.Unary = Unary
 module.exports.Binary = Binary
 module.exports.Apply = Apply
 module.exports.If = If
+module.exports.Lambda = Lambda

@@ -65,3 +65,7 @@ ast.If.prototype.check = function() {
     this.type = dc
     return this.type
 }
+
+ast.Lambda.prototype.check = function() {
+    return this.type
+}

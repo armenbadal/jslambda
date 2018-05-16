@@ -33,3 +33,7 @@ ast.If.prototype.evaluate = function(env) {
     return this.alternative.evaluate(env)
 }
 
+// lambda
+ast.Lambda.prototype.evaluate = function(env) {
+    // TODO
+}
