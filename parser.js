@@ -33,8 +33,18 @@ var scanOne = function(text) {
         }
     }
 
-    // metasymbols and operators
-    mc = /^(\(|\)|:|\+|\-|\*|\/|=|<>|>|>=|<|<=)/.exec(text)
+    // metasymbols
+    mc = /^(\(|\)|:)/.exec(text)
+    if( mc != null ) {
+        return {
+            token: mc[0],
+            value: mc[0],
+            rest: text.substring(mc[0].length)
+        }
+    }
+    
+    // operators
+    mc = /^(\+|\-|\*|\/|=|<>|>|>=|<|<=)/.exec(text)
     if( mc != null ) {
         return {
             token: 'OPER',
@@ -53,60 +63,121 @@ var scanAll = function(text) {
         res.push({token: ec.token, value: ec.value})
         ec = scanOne(ec.rest)
     }
+    res.push({token: 'EOS', value: 'EOS'})
     return res
 }
 
 var lexemes = []
 var index = 0;
 
+var have = function(exp) {
+    let head = lexemes[index].token
+    
+    if( exp instanceof Array )
+        return exp.includes(head)
+    
+    return head == exp
+}
 var next = function() {
     return lexemes[index++].value
 }
 var match = function(exp) {
-    if( lexemes[index].token == exp )
+    if( have(exp) )
         return next()
     throw 'Syntax error.'
 }
 
 var parse = function(text) {
     lexemes = scanAll(text)
-    console.log(lexemes)
-    return parseExpression()
+    return expression()
 }
 
-const firstExpr = ['REAL', 'IDENT', '(', 'OPER', 'IF', 'LAMBDA', 'APPLY']
+const exprFirst = ['REAL', 'IDENT', '(', 'OPER', 'IF', 'LAMBDA', 'APPLY']
 
-var parseExpression = function() {
-    switch( lexemes[index].token ) {
-        case 'REAL':
-            break
-        case 'IDENT':
-            break
-        case '(':
-            break
-        case 'OPER':
-            break
-        case 'if':
-            break
-        case 'lambda':
-            break
-        case 'apply':
-            break
-        default:
-            break
+var expression = function() {
+    if( have('REAL') ) {
+        let vl = next()
+        return { kind: 'REAL', value: vl }
     }
-    return null;
+
+    if( have('IDENT') ) {
+        let nm = next()
+        return { kind: 'VAR', name: nm }
+    }
+
+    if( have('(') ) {
+        next()
+        let ex = expression()
+        match(')')
+        return ex
+    }
+
+    if( have('OPER') ) {
+        let op = next()
+        let args = [ expression() ]
+        while( have(exprFirst) )
+            args.push(expression())
+        return { kind: 'MATH', oper: op, argums: args }
+    }
+
+    if( have('IF') ) {
+        next('IF')
+        let co = expression()
+        match('THEN')
+        let de = expression()
+        match('ELSE')
+        let al = expression()
+        return { kind: 'IF', cond: co, deci: de, alte: al }
+    }
+
+    if( have('LAMBDA') ) {
+        next('LAMBDA')
+        let ps = [match('IDENT')]
+        while( have('IDENT') )
+            ps.push(next())
+        match(':')
+        let by = expression()
+        return { kind: 'LAMBDA', params: ps, body: by}
+    }
+
+    if( have('APPLY') ) {
+        next()
+        let fn = expression()
+        match('TO')
+        let args = [ expression() ]
+        while( have(exprFirst) )
+            args.push(expression())
+        return { kind: 'APPLY', func: fn, argus: args }
+    }
+    
+    throw 'Syntax error.'
 }
 
-// expression
-//     : REAL
-//     | IDENT
-//     | '(' expression ')'
-//     | OPER expression (',' expression)*
-//     | 'if' expression 'then' expression 'else' expression
-//     | 'lambda' IDENT (',' IDENT)* ':' expression
-//     | 'apply' expression 'to' expression (',' expression)*
-//     ;
+let a0 = null
 
-parse('if + a b then a else b')
+// a0 = parse('3.14')
+// console.log(a0)
+
+// a0 = parse('x')
+// console.log(a0)
+
+// a0 = parse('( 7.0 )')
+// console.log(a0)
+
+// a0 = parse('* a b c d 1 2.3 4.0')
+// console.log(a0)
+
+// a0 = parse('(/ a (+ b c d) (- 1 2.3 4.0))')
+// console.log(a0)
+
+// a0 = parse('if + a b then a else b')
+// console.log(a0)
+
+// a0 = parse('lambda x y z : + x (* y z)')
+// console.log(a0)
+
+a0 = parse('apply lambda x y : + x y to 3.14 2.18')
 console.log(a0)
+
+
+
