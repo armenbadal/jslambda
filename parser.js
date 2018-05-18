@@ -1,19 +1,22 @@
 
+
+// Լեզվի ծառայողական բառերի ցուցակը
 const keywords = ['if', 'then', 'else', 'lambda', 'apply', 'to']
 
+// Տեքստից կարդալ մեկ (թոքեն, լեքսեմ) զույգ
 var scanOne = function(text) {
-    // check end of source
+    // տեքստի վերջը
     if( text == '' ) {
         return { token: 'EOS', value:'EOS', rest: '' }
     }
 
-    // skip comments
+    // անտեսել բացատանիշերը
     let mc = /^[ \n\t\r]+/.exec(text)
     if( mc != null ) {
         return scanOne(text.substring(mc[0].length))
     }
 
-    // keywords and identifiers
+    // ծառայողական բառեր և իդենտիֆիկատորներ
     mc = /^[a-zA-z][0-9a-zA-z]*/.exec(text)
     if( mc != null ) {
         return {
@@ -23,7 +26,7 @@ var scanOne = function(text) {
         }
     }
 
-    // real numbers
+    // իրական թվեր
     mc = /^[0-9]+(\.[0-9]+)?/.exec(text)
     if( mc != null ) {
         return {
@@ -33,7 +36,7 @@ var scanOne = function(text) {
         }
     }
 
-    // metasymbols
+    // ծառայողական սիմվոլներ (մետասիմվոլներ)
     mc = /^(\(|\)|:)/.exec(text)
     if( mc != null ) {
         return {
@@ -43,7 +46,7 @@ var scanOne = function(text) {
         }
     }
     
-    // operators
+    // գործողությունների նշաններ
     mc = /^(\+|\-|\*|\/|=|<>|>|>=|<|<=)/.exec(text)
     if( mc != null ) {
         return {
@@ -53,9 +56,11 @@ var scanOne = function(text) {
         }
     }
 
+    // ավելորդ, չնախատեսված նիշ
     return { token: 'UNKNOWN', value: text[0], rest: text }
 }
 
+// Կարդալ բոլոր (թոքեն, լեքսեմ) զույգերն ու վերադարձնել ցուցակ
 var scanAll = function(text) {
     let res = []
     let ec = scanOne(text)
@@ -67,9 +72,12 @@ var scanAll = function(text) {
     return res
 }
 
+// (թոքեն, լեքսեմ) զույգերի ցուցակ
 var lexemes = []
+// ընթացիկ օգտագործվող տարր ինդեքսը
 var index = 0;
 
+// ստուգել ցուցակի ընթացիկ տարրը
 var have = function(exp) {
     let head = lexemes[index].token
     
@@ -78,33 +86,35 @@ var have = function(exp) {
     
     return head == exp
 }
+// անցնել հաջորդին, և վերադարձնել նախորդի արժեքը
 var next = function() {
     return lexemes[index++].value
 }
+// ստուգել և անցնել հաջորդին
 var match = function(exp) {
     if( have(exp) )
         return next()
     throw 'Syntax error.'
 }
 
-var parse = function(text) {
-    lexemes = scanAll(text)
-    return expression()
-}
-
+// արտահայտությունը սկսող թոքենների ցուցակը. FIRST(expression)
 const exprFirst = ['REAL', 'IDENT', '(', 'OPER', 'IF', 'LAMBDA', 'APPLY']
 
+// Արտահայտությունների վերլուծությունը
 var expression = function() {
+    // իրական թիվ
     if( have('REAL') ) {
         let vl = next()
-        return { kind: 'REAL', value: vl }
+        return { kind: 'REAL', value: parseFloat(vl) }
     }
 
+    // փոփոխական (անուն)
     if( have('IDENT') ) {
         let nm = next()
         return { kind: 'VAR', name: nm }
     }
 
+    // խմբավորման փակագծեր
     if( have('(') ) {
         next()
         let ex = expression()
@@ -112,14 +122,16 @@ var expression = function() {
         return ex
     }
 
+    // ներդրված գործողություն
     if( have('OPER') ) {
         let op = next()
         let args = [ expression() ]
         while( have(exprFirst) )
             args.push(expression())
-        return { kind: 'MATH', oper: op, argums: args }
+        return { kind: 'BUILTIN-OP', oper: op, argums: args }
     }
 
+    // պայման
     if( have('IF') ) {
         next('IF')
         let co = expression()
@@ -130,6 +142,7 @@ var expression = function() {
         return { kind: 'IF', cond: co, deci: de, alte: al }
     }
 
+    // անանուն ֆունկցիա
     if( have('LAMBDA') ) {
         next('LAMBDA')
         let ps = [match('IDENT')]
@@ -140,6 +153,7 @@ var expression = function() {
         return { kind: 'LAMBDA', params: ps, body: by}
     }
 
+    // ֆունկցիայի կիրառում
     if( have('APPLY') ) {
         next()
         let fn = expression()
@@ -153,31 +167,10 @@ var expression = function() {
     throw 'Syntax error.'
 }
 
-let a0 = null
+// ծրագրի տեքստի վերլուծություն
+var parse = function(text) {
+    lexemes = scanAll(text)
+    return expression()
+}
 
-// a0 = parse('3.14')
-// console.log(a0)
-
-// a0 = parse('x')
-// console.log(a0)
-
-// a0 = parse('( 7.0 )')
-// console.log(a0)
-
-// a0 = parse('* a b c d 1 2.3 4.0')
-// console.log(a0)
-
-// a0 = parse('(/ a (+ b c d) (- 1 2.3 4.0))')
-// console.log(a0)
-
-// a0 = parse('if + a b then a else b')
-// console.log(a0)
-
-// a0 = parse('lambda x y z : + x (* y z)')
-// console.log(a0)
-
-a0 = parse('apply lambda x y : + x y to 3.14 2.18')
-console.log(a0)
-
-
-
+module.exports.parse = parse
