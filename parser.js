@@ -128,7 +128,7 @@ var expression = function() {
         let args = [ expression() ]
         while( have(exprFirst) )
             args.push(expression())
-        return { kind: 'BUILTIN-OP', oper: op, argums: args }
+        return { kind: 'BUILTIN', operation: op, arguments: args }
     }
 
     // պայման
@@ -139,18 +139,18 @@ var expression = function() {
         let de = expression()
         match('ELSE')
         let al = expression()
-        return { kind: 'IF', cond: co, deci: de, alte: al }
+        return { kind: 'IF', condition: co, decision: de, alternative: al }
     }
 
     // անանուն ֆունկցիա
     if( have('LAMBDA') ) {
         next('LAMBDA')
-        let ps = [match('IDENT')]
+        let ps = [ match('IDENT') ]
         while( have('IDENT') )
             ps.push(next())
         match(':')
         let by = expression()
-        return { kind: 'LAMBDA', params: ps, body: by}
+        return { kind: 'LAMBDA', parameters: ps, body: by, captures: [] }
     }
 
     // ֆունկցիայի կիրառում
@@ -161,7 +161,7 @@ var expression = function() {
         let args = [ expression() ]
         while( have(exprFirst) )
             args.push(expression())
-        return { kind: 'APPLY', func: fn, argus: args }
+        return { kind: 'APPLY', callee: fn, arguments: args }
     }
     
     throw 'Syntax error.'
