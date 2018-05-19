@@ -45,7 +45,7 @@ var scanOne = function(text) {
             rest: text.substring(mc[0].length)
         }
     }
-    
+
     // գործողությունների նշաններ
     mc = /^(\+|\-|\*|\/|=|<>|>|>=|<|<=)/.exec(text)
     if( mc != null ) {
@@ -56,7 +56,7 @@ var scanOne = function(text) {
         }
     }
 
-    // ավելորդ, չնախատեսված նիշ
+    // չնախատեսված, չսպասված նիշ
     return { token: 'UNKNOWN', value: text[0], rest: text }
 }
 
@@ -80,10 +80,10 @@ var index = 0;
 // ստուգել ցուցակի ընթացիկ տարրը
 var have = function(exp) {
     let head = lexemes[index].token
-    
+
     if( exp instanceof Array )
         return exp.includes(head)
-    
+
     return head == exp
 }
 // անցնել հաջորդին, և վերադարձնել նախորդի արժեքը
@@ -163,7 +163,7 @@ var expression = function() {
             args.push(expression())
         return { kind: 'APPLY', callee: fn, arguments: args }
     }
-    
+
     throw 'Syntax error.'
 }
 
