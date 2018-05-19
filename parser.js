@@ -170,6 +170,7 @@ var expression = function() {
 // ծրագրի տեքստի վերլուծություն
 var parse = function(text) {
     lexemes = scanAll(text)
+    index = 0
     return expression()
 }
 
