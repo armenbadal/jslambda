@@ -150,7 +150,7 @@ var expression = function() {
             ps.push(next())
         match(':')
         let by = expression()
-        return { kind: 'LAMBDA', parameters: ps, body: by, captures: [] }
+        return { kind: 'LAMBDA', parameters: ps, body: by, captures: {} }
     }
 
     // ֆունկցիայի կիրառում
