@@ -359,84 +359,126 @@ var expression = function() {
 գործողություն չկա, փոփոխականներին արժեքներ կարող են կապվել ֆունկցիայի
 պարամետրերի օգնությամբ։
 
+```JavaScript
+var evaluate = function(expr, env) { /* ... */ }
+```
+
 Ինչպես երևում է `expression` ֆունկցիայից, վերլուծության արդյուքնում
 կառուցվում են վեց տեսակի հանգույցներ. `REAL`, `VAR`, `BUILTIN`, `IF`,
 `LAMBDA` և `APPLY`։ `evaluate` ֆունկցիայում դիտարկվում են այս վեց դեպքերը։
 Հիմա ես հերթով ու հնարավորինս մանրամասն կներկայացնեմ նշված վեց հանգույցների
 հաշվարկման եղանակները։
 
-```JavaScript
-// արտահայտության հաշվարկումը
-var evaluate = function(expr, env) {
-    // թվի արժեքը ինքն է
-    if( expr.kind == 'REAL' ) {
-        return expr.value
-    }
-```
+`REAL` տիպի հանգույցի հաշվարկման արդյունքը դրա `value` սլոթի արժեքն է։
 
 ```JavaScript
-    // փոփոխականի արժեքը պետք է վերցնել
-    // կատարման միջավայրից
-    if( expr.kind == 'VAR' ) {
-        return env[expr.name]
-    }
-```
-
-```JavaScript
-    // հաշվարկել արգումենտները, ապա գործողությունը
-    // կրառել ստացված արժեքներին (վերանայե՛լ)
-    if( expr.kind == 'BUILTIN' ) {
-        let evags = expr.arguments.map(e => evaluate(e, env))
-        return evags.reduce(builtins[expr.operation])
-    }
-```
-
-```JavaScript
-    //
-    if( expr.kind == 'IF' ) {
-        let co = evaluate(expr.condition, env)
-        if( co !== 1.0 )
-            return evaluate(expr.decision, env)
-        return evaluate(expr.alternative, env)
-    }
-```
-
-```JavaScript
-    // լամբդայի հաշվարկման արդյունքում ստացվում է closure
-    if( expr.kind == 'LAMBDA' ) {
-        // լամբդա օբյեկտի պատճեն
-        let clos = Object.assign({}, expr)
-        // ազատ փոփոխականները
-        let fvs = freeVariables(clos)
-        // նոր միջավայրի կառուցում
-        for( let v of fvs )
-            clos.captures[v] = env[v]
-        return clos
-    }
-```
-
-```JavaScript
-    // closure-ի կիրառումը արգումենտներին
-    if( expr.kind == 'APPLY' ) {
-        // հաշվարկել կիրառելին
-        let clos = evaluate(expr.callee, env)
-        // հաշվարկել արգումենտները
-        let evags = expr.arguments.map(e => evaluate(e, env))
-        // կառուցել նոր միջավայր, որը closure-ի capture-ից
-        // և closure-ի պարամետրերին կապված արգումենտներից
-        let nenv = Object.assign({}, clos.captures)
-        let count = Math.min(clos.parameters.length, evags.length)
-        for( let k = 0; k < count; ++k )
-            nenv[clos.parameters[k]] = evags[k]
-        // closure-ի մարմինը հաշվարկել նոր միջավայրում
-        return evaluate(clos.body, nenv)
-    }
+if( expr.kind == 'REAL' ) {
+    return expr.value
 }
 ```
 
-Այս տիպի օբյեկտներում ես ավելացրել եմ ևս մի սլոթ՝ `captures`, որը լամբդա
-օբյեկտի հաշվարկման արդյունքում պետք է լրացվի մարմնի _ազատ_ փոփոխականներին
-կապված արժեքներով։
+`VAR` տիպի հանգույցի հաշվարկման արժեքը ստանալու համար միջավայրից
+վերադարձնում եմ `name` սլոթին կապված արժեքը։
+
+```JavaScript
+if( expr.kind == 'VAR' ) {
+    return env[expr.name]
+}
+```
+
+`BUILTIN` տիպի հանգույցի արժեքը ստանալու համար պետք է նախ հաշվարկել
+`arguments` ցուցակի արտահայտությունների արժեքները, ապա գրանց նկատմամբ
+կիրառել `operation` սլոթում գրանցված գործողությունը։
+
+```JavaScript
+if( expr.kind == 'BUILTIN' ) {
+    let evags = expr.arguments.map(e => evaluate(e, env))
+    return evags.reduce(builtins[expr.operation])
+}
+```
+
+`IF` տիպի հանգույցը, որ պայմանական արտահայտության մոդելն է, հաշվարկելու
+համար նախ հաշվարկվում է `condition` սլոթի արժեքը՝ պայմանը։ Եթե այն տարբեր
+է `0.0` թվային արժեքից՝ _ճշմարիտ_ է, ապա հաշվարկվում և վերադարձվում է
+`decision` սլոթի արժեքը։ Եթե `condition`-ի արժեքը զրո է, ապա հաշվարկվում ու
+վերադարձվում է `alternative` սլոթին կապված արտահայտության արժեքը։
+
+```JavaScript
+if( expr.kind == 'IF' ) {
+    let co = evaluate(expr.condition, env)
+    if( co !== 0.0 )
+        return evaluate(expr.decision, env)
+    return evaluate(expr.alternative, env)
+}
+```
+
+`LAMBDA` տիպի հանգույցի հաշվարկման արդյունքում պիտի կառուցվի մի օբյեկտ,
+որը կոչվում է _closure_ (չգիտեմ, թե հայերեն սրան ինչ են ասում)։ Իմաստն այն
+է, որ `LAMBDA` օբյեկտի `captures` սլոթում գրանցվում են `body` սլոթին կապված
+արտահայտության _ազատ փոփոխականների_ արժեքները՝ հաշվարկված ընթացիկ
+միջավայրում։ Այս կերպ լրացված `LAMBDA` օբյեկտն արդեն հնարավոր կլինի `apply`
+գործողության կիրառել արգումենտների նկատմամբ։ (Արտահայտության մեջ մտնող
+ազատ փոփոխականների բազմությունը հաշվարկող `freeVariables` ֆունկցիայի մասին
+քիչ ավելի ուշ)։
+
+```JavaScript
+if( expr.kind == 'LAMBDA' ) {
+    let clos = Object.assign({}, expr)
+    let fvs = freeVariables(clos)
+    for( let v of fvs )
+        clos.captures[v] = env[v]
+    return clos
+}
+```
+
+Մի օրինակ. թող որ տրված է `lambda y : + x y` արտահայտությունը և `{ 'x': 7 }`
+հաշվարկման միջավայրը։ Ինչպես արդեն նշեցի վերլուծության մասին պատմելիս,
+այս տրված ծրագրի վերլուծությունը կառուցելու է այսպիսի մի օբյեկտ.
+
+```JavaScript
+{ kind: 'LAMBDA',
+  parameters: [ 'y' ],
+  body:
+   { kind: 'BUILTIN',
+     operation: '+',
+     arguments: [ [Object], [Object] ] },
+  captures: {} }
+```
+
+Երբ այս օբյեկտը հաշվարկում եմ `{ 'x': 7 }` միջավայրում, ստանում եմ նույն
+օբյեկտը, բայց արդեն լրացված `captures` սլոթով։
+
+```JavaScript
+{ kind: 'LAMBDA',
+  parameters: [ 'y' ],
+  body:
+   { kind: 'BUILTIN',
+     operation: '+',
+     arguments: [ [Object], [Object] ] },
+  captures: { x: 7 } }
+```
+
+`APPLY` 
+
+
+```JavaScript
+// closure-ի կիրառումը արգումենտներին
+if( expr.kind == 'APPLY' ) {
+    // հաշվարկել կիրառելին
+    let clos = evaluate(expr.callee, env)
+    // հաշվարկել արգումենտները
+    let evags = expr.arguments.map(e => evaluate(e, env))
+    // կառուցել նոր միջավայր, որը closure-ի capture-ից
+    // և closure-ի պարամետրերին կապված արգումենտներից
+    let nenv = Object.assign({}, clos.captures)
+    let count = Math.min(clos.parameters.length, evags.length)
+    for( let k = 0; k < count; ++k )
+        nenv[clos.parameters[k]] = evags[k]
+    // closure-ի մարմինը հաշվարկել նոր միջավայրում
+    return evaluate(clos.body, nenv)
+}
+```
+
 
 
 

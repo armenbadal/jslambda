@@ -33,7 +33,7 @@ var freeVariables = function(expr) {
 
     // աբստրակցիայի գործողությունըը միակն է, որ ստեղծում է
     // կապված փոփոխականներ; այստեղ ազատ փոփոխականների
-    // բազմությունը ստացվում է մարմնի ազատ փոփոկականների 
+    // բազմությունը ստացվում է մարմնի ազատ փոփոկականների
     // բազմությունից լամբդա արտահայտության պարամետրերը
     // հեռացնելով
     if( expr.kind == 'LAMBDA' ) {
@@ -41,8 +41,8 @@ var freeVariables = function(expr) {
         return fvs.filter(e => !expr.parameters.includes(e))
     }
 
-    // կիրառման գործողության համար միավորվում են կիրառվող 
-    // ֆունկցիայի և արգումենտների ազատ փոփոխականների 
+    // կիրառման գործողության համար միավորվում են կիրառվող
+    // ֆունկցիայի և արգումենտների ազատ փոփոխականների
     // բազմությունները
     if( expr.kind == 'APPLY' ) {
         let fvs = freeVariables(expr.callee)
@@ -96,7 +96,7 @@ var evaluate = function(expr, env) {
     //
     if( expr.kind == 'IF' ) {
         let co = evaluate(expr.condition, env)
-        if( co !== 1.0 )
+        if( co !== 0.0 )
             return evaluate(expr.decision, env)
         return evaluate(expr.alternative, env)
     }
@@ -132,4 +132,3 @@ var evaluate = function(expr, env) {
 
 
 module.exports.evaluate = evaluate
-
