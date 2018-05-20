@@ -362,7 +362,77 @@ var expression = function() {
 Ինչպես երևում է `expression` ֆունկցիայից, վերլուծության արդյուքնում
 կառուցվում են վեց տեսակի հանգույցներ. `REAL`, `VAR`, `BUILTIN`, `IF`,
 `LAMBDA` և `APPLY`։ `evaluate` ֆունկցիայում դիտարկվում են այս վեց դեպքերը։
+Հիմա ես հերթով ու հնարավորինս մանրամասն կներկայացնեմ նշված վեց հանգույցների
+հաշվարկման եղանակները։
 
+```JavaScript
+// արտահայտության հաշվարկումը
+var evaluate = function(expr, env) {
+    // թվի արժեքը ինքն է
+    if( expr.kind == 'REAL' ) {
+        return expr.value
+    }
+```
+
+```JavaScript
+    // փոփոխականի արժեքը պետք է վերցնել
+    // կատարման միջավայրից
+    if( expr.kind == 'VAR' ) {
+        return env[expr.name]
+    }
+```
+
+```JavaScript
+    // հաշվարկել արգումենտները, ապա գործողությունը
+    // կրառել ստացված արժեքներին (վերանայե՛լ)
+    if( expr.kind == 'BUILTIN' ) {
+        let evags = expr.arguments.map(e => evaluate(e, env))
+        return evags.reduce(builtins[expr.operation])
+    }
+```
+
+```JavaScript
+    //
+    if( expr.kind == 'IF' ) {
+        let co = evaluate(expr.condition, env)
+        if( co !== 1.0 )
+            return evaluate(expr.decision, env)
+        return evaluate(expr.alternative, env)
+    }
+```
+
+```JavaScript
+    // լամբդայի հաշվարկման արդյունքում ստացվում է closure
+    if( expr.kind == 'LAMBDA' ) {
+        // լամբդա օբյեկտի պատճեն
+        let clos = Object.assign({}, expr)
+        // ազատ փոփոխականները
+        let fvs = freeVariables(clos)
+        // նոր միջավայրի կառուցում
+        for( let v of fvs )
+            clos.captures[v] = env[v]
+        return clos
+    }
+```
+
+```JavaScript
+    // closure-ի կիրառումը արգումենտներին
+    if( expr.kind == 'APPLY' ) {
+        // հաշվարկել կիրառելին
+        let clos = evaluate(expr.callee, env)
+        // հաշվարկել արգումենտները
+        let evags = expr.arguments.map(e => evaluate(e, env))
+        // կառուցել նոր միջավայր, որը closure-ի capture-ից
+        // և closure-ի պարամետրերին կապված արգումենտներից
+        let nenv = Object.assign({}, clos.captures)
+        let count = Math.min(clos.parameters.length, evags.length)
+        for( let k = 0; k < count; ++k )
+            nenv[clos.parameters[k]] = evags[k]
+        // closure-ի մարմինը հաշվարկել նոր միջավայրում
+        return evaluate(clos.body, nenv)
+    }
+}
+```
 
 Այս տիպի օբյեկտներում ես ավելացրել եմ ևս մի սլոթ՝ `captures`, որը լամբդա
 օբյեկտի հաշվարկման արդյունքում պետք է լրացվի մարմնի _ազատ_ փոփոխականներին
