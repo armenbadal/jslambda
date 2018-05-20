@@ -133,7 +133,7 @@ var expression = function() {
 
     // պայման
     if( have('IF') ) {
-        next('IF')
+        next()
         let co = expression()
         match('THEN')
         let de = expression()
@@ -144,7 +144,7 @@ var expression = function() {
 
     // անանուն ֆունկցիա
     if( have('LAMBDA') ) {
-        next('LAMBDA')
+        next()
         let ps = [ match('IDENT') ]
         while( have('IDENT') )
             ps.push(next())
