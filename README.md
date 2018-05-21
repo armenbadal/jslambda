@@ -1,5 +1,6 @@
-# basic-jsi
-JavaScript և Node.js ուսումնասիրություններ
+# Լամբդա լեզվի իրականացում
+
+_Փորձեր JavaScript-ի և Node.js-ի հետ_
 
 JavaScript-ը հերթական ծրագրավորման լեզուն է, որի ուսումնասիրությամբ որոշեցի
 զբաղվել վերջին մի քանի շաբաթների հանգստյան օրերին։ Եվ ինչպես միշտ նոր լեզվի
@@ -457,21 +458,22 @@ if( expr.kind == 'LAMBDA' ) {
   captures: { x: 7 } }
 ```
 
-`APPLY` հանգույցի հաշվարկման համար պետք է նախ հաշվարկել `callee` սլոթին
-կապված արտահայտությունը և անպայմանորեն ստանալ `LAMBDA` տիպի օբյեկտ՝
-closure։
-Հետո
-հաշվարկվում են `arguments` սլոթին կապված ցուցակի արտահայտությունները, և
-դրանք լամբդայի պարամետրերին ըստ հերթականությամբ համապատասխանեցնելով
-կառուցվում է նոր `map`։
+`APPLY` հանգույցի հաշվարկումն ամենահետաքրքիրն ու ամենակարևորն է։ Նախ պետք է 
+հաշվարկել կիրառվող ֆունկցիան՝ `apply` բառից հետո գրած արտահայտությունը, ու 
+համոզվել, որ ստացվել է `LAMBDA` տիպի օբյեկտ։ Ավելի ճիշտ, պետք է սատացվի closure,
+որի `captures`-ը պարունակում է լամբդայի մարմնի ազատ փոփոխականների արժեքները
+(bindings)։ 
+Հետո պետք է հաշվարկել `APPLY` օբյեկտի `arguments` սլոթին կապված ցուցակի 
+արտահայտություններն, ու, դրանք համադրելով closure-ի պարամետրերին, ստանալ 
+պարամետր—արժեք արտապատկերում։
 
 ```JavaScript
 if( expr.kind == 'APPLY' ) {
     let clos = evaluate(expr.callee, env)
     if( clos.kind != 'LAMBDA' )
         throw 'Evaluation error.'
-    let evags = expr.arguments.map(e => evaluate(e, env))
     let nenv = Object.assign({}, clos.captures)
+    let evags = expr.arguments.map(e => evaluate(e, env))
     let count = Math.min(clos.parameters.length, evags.length)
     for( let k = 0; k < count; ++k )
         nenv[clos.parameters[k]] = evags[k]
@@ -480,6 +482,8 @@ if( expr.kind == 'APPLY' ) {
 ```
 
 
+
+## Read-Eval-Print Loop
 
 
 ## Աղբյուրներ
