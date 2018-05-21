@@ -348,7 +348,6 @@ var expression = function() {
 ```
 
 
-
 ## Ինտերպրետացիա
 
 Լամբդա ծրագրի վերլուծության արդյունքում կառուցված ծառի _ինտերպրետացիայի_
@@ -458,23 +457,24 @@ if( expr.kind == 'LAMBDA' ) {
   captures: { x: 7 } }
 ```
 
-`APPLY` 
-
+`APPLY` հանգույցի հաշվարկման համար պետք է նախ հաշվարկել `callee` սլոթին
+կապված արտահայտությունը և անպայմանորեն ստանալ `LAMBDA` տիպի օբյեկտ՝
+closure։
+Հետո
+հաշվարկվում են `arguments` սլոթին կապված ցուցակի արտահայտությունները, և
+դրանք լամբդայի պարամետրերին ըստ հերթականությամբ համապատասխանեցնելով
+կառուցվում է նոր `map`։
 
 ```JavaScript
-// closure-ի կիրառումը արգումենտներին
 if( expr.kind == 'APPLY' ) {
-    // հաշվարկել կիրառելին
     let clos = evaluate(expr.callee, env)
-    // հաշվարկել արգումենտները
+    if( clos.kind != 'LAMBDA' )
+        throw 'Evaluation error.'
     let evags = expr.arguments.map(e => evaluate(e, env))
-    // կառուցել նոր միջավայր, որը closure-ի capture-ից
-    // և closure-ի պարամետրերին կապված արգումենտներից
     let nenv = Object.assign({}, clos.captures)
     let count = Math.min(clos.parameters.length, evags.length)
     for( let k = 0; k < count; ++k )
         nenv[clos.parameters[k]] = evags[k]
-    // closure-ի մարմինը հաշվարկել նոր միջավայրում
     return evaluate(clos.body, nenv)
 }
 ```

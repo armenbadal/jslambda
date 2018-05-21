@@ -117,6 +117,8 @@ var evaluate = function(expr, env) {
     if( expr.kind == 'APPLY' ) {
         // հաշվարկել կիրառելին
         let clos = evaluate(expr.callee, env)
+        if( clos.kind != 'LAMBDA' )
+            throw 'Evaluation error.'
         // հաշվարկել արգումենտները
         let evags = expr.arguments.map(e => evaluate(e, env))
         // կառուցել նոր միջավայր, որը closure-ի capture-ից
