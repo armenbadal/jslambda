@@ -1,23 +1,26 @@
 
+var ps = require('./parser')
+var ev = require('./evaluate')
 
-function ask(question, format, callback) {
-    var stdin = process.stdin
-    var stdout = process.stdout
- 
-    stdin.resume()
-    stdout.write(question + ": ")
- 
-    // stdin.once('data', function(data) {
-    //     data = data.toString().trim()
+var rl = require('readline')
 
-    //     if (format.test(data)) {
-    //         callback(data)
-    //     }
-    //     else {
-    //         stdout.write("It should match: "+ format +"\n")
-    //         ask(question, format, callback)
-    //     }
-    // })
+var rr = rl.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false
+});
+
+function repl() {
+    rr.on('line', function (cmd) {
+        console.log('You just typed: '+ cmd);
+        if( cmd == 'end' ) {
+            console.info('Bye')
+            rr.close()
+        }
+        else {
+            console.info(ev.evaluate(ps.parse(cmd), {}))
+        }
+    });
 }
 
-ask('> ', '', null)
+repl()
