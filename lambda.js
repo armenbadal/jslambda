@@ -3,6 +3,7 @@ var ps = require('./parser')
 var ev = require('./evaluate')
 
 var rl = require('readline')
+var fs = require('fs')
 
 ///
 var repl = function() {
@@ -16,7 +17,7 @@ var repl = function() {
     rr.prompt()
 
     rr.on('line', (line) => {
-        if( line == 'end' ) {
+        if( line == '///' ) {
             rr.close()
             return
         }
@@ -24,10 +25,24 @@ var repl = function() {
         console.info(ev.evaluate(ps.parse(line), {}))
         rr.prompt()
     }).on('close', () => {
-        console.info('Bye')
+        console.info('αντίο')
         process.exit(0)
     });
 }
 
-/// start repl
-repl()
+///
+var evalFile = function(path) {
+  if( !fs.existsSync(path) ) return;
+
+  let prog = fs.readFileSync(path, {encoding: 'utf-8'})
+  console.info(ev.evaluate(ps.parse(prog), {}))
+}
+
+
+///
+if( process.argv.length > 2 ) {
+    evalFile(process.argv[2])
+}
+else {
+    repl()
+}
