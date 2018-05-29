@@ -50,10 +50,18 @@ var freeVariables = function(expr) {
         return fvs
     }
 
-    // x փոփոխականն ազատ է LET արտահայտության մեջ, եթե
-    // այն ազատ է
+    // x փոփոխականն ազատ է LET արտահայտության մեջ, եթե այն 
+    // ազատ է մարմնում և LET-ի փոփոխականներից որևէ մեկը չէ
     if( expr.kind == 'LET' ) {
-        // TODO:
+        let pvs = []
+        let fvs = []
+        for( let ve of expr.bindings ) {
+            pvs.push(ve.name)
+            fvs.concat(freeVariables(ve.value))
+        }
+
+        let bvs = freeVariables(expr.body).filter(e => !pvs.includes(e))
+        return fvs.concat(bvs)
     }
 
     // ... այլ չդիտարկված դեպքերում արդյունքը
@@ -89,6 +97,8 @@ var evaluate = function(expr, env) {
     // փոփոխականի արժեքը պետք է վերցնել
     // կատարման միջավայրից
     if( expr.kind == 'VAR' ) {
+console.log('-var-name--> ', expr.name)
+console.log('-var-env--> ', env)
         return env[expr.name]
     }
 
@@ -121,6 +131,7 @@ var evaluate = function(expr, env) {
 
     // closure-ի կիրառումը արգումենտներին
     if( expr.kind == 'APPLY' ) {
+console.log('-apply-env--> ', env)
         // հաշվարկել կիրառելին
         let clos = evaluate(expr.callee, env)
         if( clos.kind != 'LAMBDA' )
@@ -134,12 +145,27 @@ var evaluate = function(expr, env) {
         for( let k = 0; k < count; ++k )
             nenv[clos.parameters[k]] = evags[k]
         // closure-ի մարմինը հաշվարկել նոր միջավայրում
+console.log('-apply-nenv--> ', nenv)
         return evaluate(clos.body, nenv)
     }
 
     // կապերի ստեղծում
     if( expr.kind == 'LET' ) {
-        // TODO:
+        let nenv = Object.create({}, env)
+        for( let nv of expr.bindings ) {
+            nenv[nv.name] = null
+            let ev = evaluate(nv.value, nenv)
+            if( typeof ev === 'object' && ev.kind == 'LAMBDA' ) {
+                if( nv.name in ev.captures )
+                    delete ev.captures[nv.name]
+console.log(ev)
+            }
+            nenv[nv.name] = ev
+console.log('-1--> ', nenv)
+        }
+console.log('-body-> ', expr.body)
+console.log('-nenv-> ', nenv)
+        return evaluate(expr.body, nenv)
     }
 
     return null
