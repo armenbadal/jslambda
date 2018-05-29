@@ -50,6 +50,12 @@ var freeVariables = function(expr) {
         return fvs
     }
 
+    // x փոփոխականն ազատ է LET արտահայտության մեջ, եթե
+    // այն ազատ է
+    if( expr.kind == 'LET' ) {
+        // TODO:
+    }
+
     // ... այլ չդիտարկված դեպքերում արդյունքը
     // դատարկ բազմություն է
     return []
@@ -62,14 +68,14 @@ const builtins = {
     '*': (x, y) => x * y,
     '/': (x, y) => x / y,
 
-    '=': (x, y) => x == y,
+    '=':  (x, y) => x == y,
     '<>': (x, y) => x != y,
-    '>': (x, y) => x > y,
+    '>':  (x, y) => x > y,
     '>=': (x, y) => x >= y,
-    '<': (x, y) => x < y,
+    '<':  (x, y) => x < y,
     '<=': (x, y) => x <= y,
 
-    'OR': (x, y) => x || y,
+    'OR':  (x, y) => x || y,
     'AND': (x, y) => x && y
 }
 
@@ -130,6 +136,13 @@ var evaluate = function(expr, env) {
         // closure-ի մարմինը հաշվարկել նոր միջավայրում
         return evaluate(clos.body, nenv)
     }
+
+    // կապերի ստեղծում
+    if( expr.kind == 'LET' ) {
+        // TODO:
+    }
+
+    return null
 }
 
 

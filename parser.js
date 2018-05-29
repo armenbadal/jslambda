@@ -1,7 +1,8 @@
 
 
 // Լեզվի ծառայողական բառերի ցուցակը
-const keywords = ['if', 'then', 'else', 'lambda', 'apply', 'to']
+const keywords = ['if', 'then', 'else', 'lambda', 'apply',
+ 'to', 'let', 'is', 'in', 'and', 'or']
 
 // Տեքստից կարդալ մեկ (թոքեն, լեքսեմ) զույգ
 var scanOne = function(text) {
@@ -94,7 +95,7 @@ var next = function() {
 var match = function(exp) {
     if( have(exp) )
         return next()
-    throw 'Syntax error.'
+    throw `Syntax error: expected ${exp} but got ${lexemes[index].value}`
 }
 
 // արտահայտությունը սկսող թոքենների ցուցակը. FIRST(expression)
@@ -162,6 +163,25 @@ var expression = function() {
         while( have(exprFirst) )
             args.push(expression())
         return { kind: 'APPLY', callee: fn, arguments: args }
+    }
+
+    // կապերի ստեղծում
+    if( have('LET') ) {
+        next()
+        let nm = match('IDENT')
+        match('IS')
+        let vl = expression()
+        let nvs = [ {name: nm, value: vl} ]
+        while( have('AND') ) {
+            next()
+            let nm = match('IDENT')
+            match('IS')
+            let vl = expression()
+            nvs.push({name: nm, value: vl})
+        }
+        match('IN')
+        let dy = expression()
+        return { kind: 'LET', bindings: nvs, body: dy }
     }
 
     throw 'Syntax error.'

@@ -1,17 +1,20 @@
 
-var vals = [6, 5, 4, 3, 2, 1]
+var ps = require('./parser')
 
-var v0 = vals.map( x => x * x )
-console.log(v0)
+const test0 = `
+let f is lambda x : * x x
+and h is lambda x : + x x x
+in + (apply f to 2) (apply h to 3)
+`
 
-var v1 = vals.reduce( (x, y) => x + y, 0 )
-console.log(v1)
+const test1 = `
+let f is lambda x : * x x
+in + (apply f to 2)
+`
 
-var v2 = vals.filter( e => !(e % 2 == 0) )
-console.log(v2)
 
-var C = {}
-for( let v of vals )
-    C[v] = v * 2
-console.log(C)
+let ast0 = ps.parse(test0)
+console.log(ast0)
 
+let ast1 = ps.parse(test1)
+console.log(ast1)
