@@ -76,12 +76,12 @@ const builtins = {
     '*': (x, y) => x * y,
     '/': (x, y) => x / y,
 
-    '=':  (x, y) => x == y,
-    '<>': (x, y) => x != y,
-    '>':  (x, y) => x > y,
-    '>=': (x, y) => x >= y,
-    '<':  (x, y) => x < y,
-    '<=': (x, y) => x <= y,
+    '=':  (x, y) => x == y ? 1.0 : 0.0,
+    '<>': (x, y) => x != y ? 1.0 : 0.0,
+    '>':  (x, y) => x > y ? 1.0 : 0.0,
+    '>=': (x, y) => x >= y ? 1.0 : 0.0,
+    '<':  (x, y) => x < y ? 1.0 : 0.0,
+    '<=': (x, y) => x <= y ? 1.0 : 0.0,
 
     'OR':  (x, y) => x || y,
     'AND': (x, y) => x && y
@@ -97,8 +97,6 @@ var evaluate = function(expr, env) {
     // փոփոխականի արժեքը պետք է վերցնել
     // կատարման միջավայրից
     if( expr.kind == 'VAR' ) {
-console.log('-var-name--> ', expr.name)
-console.log('-var-env--> ', env)
         return env[expr.name]
     }
 
@@ -131,7 +129,6 @@ console.log('-var-env--> ', env)
 
     // closure-ի կիրառումը արգումենտներին
     if( expr.kind == 'APPLY' ) {
-console.log('-apply-env--> ', env)
         // հաշվարկել կիրառելին
         let clos = evaluate(expr.callee, env)
         if( clos.kind != 'LAMBDA' )
@@ -140,12 +137,11 @@ console.log('-apply-env--> ', env)
         let evags = expr.arguments.map(e => evaluate(e, env))
         // կառուցել նոր միջավայր, որը closure-ի capture-ից
         // և closure-ի պարամետրերին կապված արգումենտներից
-        let nenv = Object.assign({}, clos.captures)
+        let nenv = Object.assign({}, env, clos.captures)
         let count = Math.min(clos.parameters.length, evags.length)
         for( let k = 0; k < count; ++k )
             nenv[clos.parameters[k]] = evags[k]
         // closure-ի մարմինը հաշվարկել նոր միջավայրում
-console.log('-apply-nenv--> ', nenv)
         return evaluate(clos.body, nenv)
     }
 
@@ -158,13 +154,9 @@ console.log('-apply-nenv--> ', nenv)
             if( typeof ev === 'object' && ev.kind == 'LAMBDA' ) {
                 if( nv.name in ev.captures )
                     delete ev.captures[nv.name]
-console.log(ev)
             }
             nenv[nv.name] = ev
-console.log('-1--> ', nenv)
         }
-console.log('-body-> ', expr.body)
-console.log('-nenv-> ', nenv)
         return evaluate(expr.body, nenv)
     }
 

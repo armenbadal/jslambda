@@ -1,0 +1,10 @@
+
+let
+    gcd is lambda n m : 
+        if = n m
+        then m 
+        else if > m n 
+             then (apply gcd to (- m n) n)
+             else (apply gcd to m (- n m))
+in
+    apply gcd to 13 26

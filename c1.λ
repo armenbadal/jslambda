@@ -1,3 +1,5 @@
 
-let f is lambda n : if = n 1 then 1 else * n (apply f to - n 1)
-in apply f to 7
+let
+    f is lambda n : if = n 1 then 1 else * n (apply f to - n 1)
+in
+    apply f to 10
