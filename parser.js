@@ -3,15 +3,11 @@
 var Parser = function() {
     // Լեզվի ծառայողական բառերի ցուցակը
     this.keywords = ['if', 'then', 'else', 'lambda', 'apply',
-                      'to', 'let', 'is', 'in', 'and', 'or']
+                     'to', 'let', 'is', 'in', 'and', 'or']
 
     // արտահայտությունը սկսող թոքենների ցուցակը. FIRST(expression)
-    this.exprFirst = ['REAL', 'IDENT', '(', 'OPER', 'IF', 'LAMBDA', 'APPLY']
-
-//    // (թոքեն, լեքսեմ) զույգերի ցուցակ
-//    var lexemes = []
-//    // ընթացիկ օգտագործվող տարր ինդեքսը
-//    var index = 0;
+    this.exprFirst = ['REAL', 'IDENT', '[', '(', 'OPER',
+                      'IF', 'LAMBDA', 'APPLY']
 }
 
 // Տեքստից կարդալ մեկ (թոքեն, լեքսեմ) զույգ
@@ -28,7 +24,7 @@ Parser.prototype.scanOne = function(text) {
     }
 
     // ծառայողական բառեր և իդենտիֆիկատորներ
-    mc = /^[a-zA-z][0-9a-zA-z]*/.exec(text)
+    mc = /^[a-zA-Z][0-9a-zA-Z]*/.exec(text)
     if( mc != null ) {
         return {
             token: this.keywords.includes(mc[0]) ? mc[0].toUpperCase() : 'IDENT',
@@ -48,7 +44,7 @@ Parser.prototype.scanOne = function(text) {
     }
 
     // ծառայողական սիմվոլներ (մետասիմվոլներ)
-    mc = /^(\(|\)|:)/.exec(text)
+    mc = /^(\(|\)|\[|\]|:)/.exec(text)
     if( mc != null ) {
         return {
             token: mc[0],
@@ -99,7 +95,7 @@ Parser.prototype.next = function() {
 }
 // ընթացիկ լեքսեմի արժեքը
 Parser.prototype.head = function() {
-    lex ci = this.lexemes.current
+    let ci = this.lexemes.current
     return this.lexemes[ci].value
 }
 // ստուգել և անցնել հաջորդին
@@ -122,6 +118,17 @@ Parser.prototype.expression = function() {
     if( this.have('IDENT') ) {
         let nm = this.next()
         return { kind: 'VAR', name: nm }
+    }
+
+    // ցուցակ
+    if( this.have('[') ) {
+        let cs = []
+        this.next()
+        while( this.have(this.exprFirst) ) {
+            cs.push(this.expression())
+        }
+        this.match(']')
+        return { kind: 'LIST', items: cs }
     }
 
     // խմբավորման փակագծեր
@@ -193,7 +200,7 @@ Parser.prototype.expression = function() {
         return { kind: 'LET', bindings: nvs, body: dy }
     }
 
-    throw 'Syntax error.'
+    throw 'Syntax error. Unexpected start of expression.'
 }
 
 // ծրագրի տեքստի վերլուծություն

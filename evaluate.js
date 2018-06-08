@@ -100,6 +100,11 @@ var evaluate = function(expr, env) {
         return env[expr.name]
     }
 
+    // ցուցակը որպես արժեք
+    if( expr.kind == 'LIST' ) {
+        return expr
+    }
+
     // հաշվարկել արգումենտները, ապա գործողությունը
     // կրառել ստացված արժեքներին (վերանայե՛լ)
     if( expr.kind == 'BUILTIN' ) {
