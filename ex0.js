@@ -13,8 +13,8 @@ in + (apply f to 2)
 `
 
 
-let ast0 = ps.parse(test0)
+let ast0 = (new ps.Parser()).parse(test0)
 console.log(ast0)
 
-let ast1 = ps.parse(test1)
+let ast1 = (new ps.Parser()).parse(test1)
 console.log(ast1)

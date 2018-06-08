@@ -6,6 +6,12 @@ var rl = require('readline')
 var fs = require('fs')
 
 ///
+var evalSource = function(source) {
+    let parser = new ps.Parser()
+    return ev.evaluate(parser.parse(source), {})
+}
+
+///
 var repl = function() {
     var rr = rl.createInterface({
         input: process.stdin,
@@ -22,7 +28,7 @@ var repl = function() {
             return
         }
 
-        console.info(ev.evaluate(ps.parse(line), {}))
+        console.info(evalSource(line))
         rr.prompt()
     }).on('close', () => {
         console.info('αντίο')
@@ -35,7 +41,7 @@ var evalFile = function(path) {
   if( !fs.existsSync(path) ) return;
 
   let prog = fs.readFileSync(path, {encoding: 'utf-8'})
-  console.info(ev.evaluate(ps.parse(prog), {}))
+  console.info(evalSource(prog))
 }
 
 

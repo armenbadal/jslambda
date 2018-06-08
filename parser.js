@@ -1,11 +1,21 @@
 
+// Վերլուծության դասի սահմանումը
+var Parser = function() {
+    // Լեզվի ծառայողական բառերի ցուցակը
+    this.keywords = ['if', 'then', 'else', 'lambda', 'apply',
+                      'to', 'let', 'is', 'in', 'and', 'or']
 
-// Լեզվի ծառայողական բառերի ցուցակը
-const keywords = ['if', 'then', 'else', 'lambda', 'apply',
- 'to', 'let', 'is', 'in', 'and', 'or']
+    // արտահայտությունը սկսող թոքենների ցուցակը. FIRST(expression)
+    this.exprFirst = ['REAL', 'IDENT', '(', 'OPER', 'IF', 'LAMBDA', 'APPLY']
+
+//    // (թոքեն, լեքսեմ) զույգերի ցուցակ
+//    var lexemes = []
+//    // ընթացիկ օգտագործվող տարր ինդեքսը
+//    var index = 0;
+}
 
 // Տեքստից կարդալ մեկ (թոքեն, լեքսեմ) զույգ
-var scanOne = function(text) {
+Parser.prototype.scanOne = function(text) {
     // տեքստի վերջը
     if( text == '' ) {
         return { token: 'EOS', value:'EOS', rest: '' }
@@ -14,14 +24,14 @@ var scanOne = function(text) {
     // անտեսել բացատանիշերը
     let mc = /^[ \n\t\r]+/.exec(text)
     if( mc != null ) {
-        return scanOne(text.substring(mc[0].length))
+        return this.scanOne(text.substring(mc[0].length))
     }
 
     // ծառայողական բառեր և իդենտիֆիկատորներ
     mc = /^[a-zA-z][0-9a-zA-z]*/.exec(text)
     if( mc != null ) {
         return {
-            token: keywords.includes(mc[0]) ? mc[0].toUpperCase() : 'IDENT',
+            token: this.keywords.includes(mc[0]) ? mc[0].toUpperCase() : 'IDENT',
             value: mc[0],
             rest: text.substring(mc[0].length)
         }
@@ -62,125 +72,124 @@ var scanOne = function(text) {
 }
 
 // Կարդալ բոլոր (թոքեն, լեքսեմ) զույգերն ու վերադարձնել ցուցակ
-var scanAll = function(text) {
+Parser.prototype.scanAll = function(text) {
     let res = []
-    let ec = scanOne(text)
+    let ec = this.scanOne(text)
     while( ec.token != 'EOS' ) {
-        res.push({token: ec.token, value: ec.value})
-        ec = scanOne(ec.rest)
+        res.push({ token: ec.token, value: ec.value })
+        ec = this.scanOne(ec.rest)
     }
-    res.push({token: 'EOS', value: 'EOS'})
+    res.push({ token: 'EOS', value: 'EOS' })
+    res.current = 0
     return res
 }
 
-// (թոքեն, լեքսեմ) զույգերի ցուցակ
-var lexemes = []
-// ընթացիկ օգտագործվող տարր ինդեքսը
-var index = 0;
-
 // ստուգել ցուցակի ընթացիկ տարրը
-var have = function(exp) {
-    let head = lexemes[index].token
+Parser.prototype.have = function(exp) {
+    let headtok = this.lexemes[this.lexemes.current].token
 
     if( exp instanceof Array )
-        return exp.includes(head)
+        return exp.includes(headtok)
 
-    return head == exp
+    return headtok == exp
 }
 // անցնել հաջորդին, և վերադարձնել նախորդի արժեքը
-var next = function() {
-    return lexemes[index++].value
+Parser.prototype.next = function() {
+    return this.lexemes[this.lexemes.current++].value
+}
+// ընթացիկ լեքսեմի արժեքը
+Parser.prototype.head = function() {
+    lex ci = this.lexemes.current
+    return this.lexemes[ci].value
 }
 // ստուգել և անցնել հաջորդին
-var match = function(exp) {
-    if( have(exp) )
-        return next()
-    throw `Syntax error: expected ${exp} but got ${lexemes[index].value}`
+Parser.prototype.match = function(exp) {
+    if( this.have(exp) )
+        return this.next()
+    throw `Syntax error: expected ${exp} but got ${this.head()}.}`
 }
 
-// արտահայտությունը սկսող թոքենների ցուցակը. FIRST(expression)
-const exprFirst = ['REAL', 'IDENT', '(', 'OPER', 'IF', 'LAMBDA', 'APPLY']
 
 // Արտահայտությունների վերլուծությունը
-var expression = function() {
+Parser.prototype.expression = function() {
     // իրական թիվ
-    if( have('REAL') ) {
-        let vl = next()
+    if( this.have('REAL') ) {
+        let vl = this.next()
         return { kind: 'REAL', value: parseFloat(vl) }
     }
 
     // փոփոխական (անուն)
-    if( have('IDENT') ) {
-        let nm = next()
+    if( this.have('IDENT') ) {
+        let nm = this.next()
         return { kind: 'VAR', name: nm }
     }
 
     // խմբավորման փակագծեր
-    if( have('(') ) {
-        next()
-        let ex = expression()
-        match(')')
+    if( this.have('(') ) {
+        this.next()
+        let ex = this.expression()
+        this.match(')')
         return ex
     }
 
     // ներդրված գործողություն
-    if( have('OPER') ) {
-        let op = next()
-        let args = [ expression() ]
-        while( have(exprFirst) )
-            args.push(expression())
+    if( this.have('OPER') ) {
+        let op = this.next()
+        let args = [ this.expression() ]
+        while( this.have(this.exprFirst) )
+            args.push(this.expression())
         return { kind: 'BUILTIN', operation: op, arguments: args }
     }
 
     // պայման
-    if( have('IF') ) {
-        next()
-        let co = expression()
-        match('THEN')
-        let de = expression()
-        match('ELSE')
-        let al = expression()
+    if( this.have('IF') ) {
+        this.next()
+        let co = this.expression()
+        this.match('THEN')
+        let de = this.expression()
+        this.match('ELSE')
+        let al = this.expression()
         return { kind: 'IF', condition: co, decision: de, alternative: al }
     }
 
     // անանուն ֆունկցիա
-    if( have('LAMBDA') ) {
-        next()
-        let ps = [ match('IDENT') ]
-        while( have('IDENT') )
-            ps.push(next())
-        match(':')
-        let by = expression()
+    if( this.have('LAMBDA') ) {
+        this.next()
+        let ps = [ this.match('IDENT') ]
+        while( this.have('IDENT') )
+            ps.push(this.next())
+        this.match(':')
+        let by = this.expression()
         return { kind: 'LAMBDA', parameters: ps, body: by, captures: {} }
     }
 
     // ֆունկցիայի կիրառում
-    if( have('APPLY') ) {
-        next()
-        let fn = expression()
-        match('TO')
-        let args = [ expression() ]
-        while( have(exprFirst) )
-            args.push(expression())
+    if( this.have('APPLY') ) {
+        this.next()
+        let fn = this.expression()
+        this.match('TO')
+        let args = [ this.expression() ]
+        while( this.have(this.exprFirst) )
+            args.push(this.expression())
         return { kind: 'APPLY', callee: fn, arguments: args }
     }
 
     // կապերի ստեղծում
-    if( have('LET') ) {
-        next()
-        let nm = match('IDENT')
-        match('IS')
-        let vl = expression()
+    if( this.have('LET') ) {
+        this.next()
+        let nm = this.match('IDENT')
+        this.match('IS')
+        let vl = this.expression()
         let nvs = [ {name: nm, value: vl} ]
-        while( have('AND') ) {
-            next()
-            let nm = match('IDENT')
-            match('IS')
-            let vl = expression()
+        while( this.have('AND') ) {
+            this.next()
+            let nm = this.match('IDENT')
+            this.match('IS')
+            let vl = this.expression()
             nvs.push({name: nm, value: vl})
         }
-        match('IN')
-        let dy = expression()
+        this.match('IN')
+        let dy = this.expression()
         return { kind: 'LET', bindings: nvs, body: dy }
     }
 
@@ -188,10 +197,9 @@ var expression = function() {
 }
 
 // ծրագրի տեքստի վերլուծություն
-var parse = function(text) {
-    lexemes = scanAll(text)
-    index = 0
-    return expression()
+Parser.prototype.parse = function(text) {
+    this.lexemes = this.scanAll(text)
+    return this.expression()
 }
 
-module.exports.parse = parse
+module.exports.Parser = Parser
