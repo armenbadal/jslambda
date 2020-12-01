@@ -1,6 +1,6 @@
 
 // flatten array of arrays
-var flatten = function(arrs) {
+const flatten = function(arrs) {
     let res = []
     for( let el of arrs )
         res = res.concat(el)
@@ -8,7 +8,7 @@ var flatten = function(arrs) {
 }
 
 // Ազատ փոփոխականների որոշումը
-var freeVariables = function(expr) {
+const freeVariables = function(expr) {
     // փոփոխականն ինքն ի սկզբանե ազատ է
     if( expr.kind == 'VAR' ) {
         return [expr.name]
@@ -84,11 +84,15 @@ const builtins = {
     '<=': (x, y) => x <= y ? 1.0 : 0.0,
 
     'OR':  (x, y) => x || y,
-    'AND': (x, y) => x && y
+    'AND': (x, y) => x && y,
+
+    'CONS': (x, y) => [x].concat(y),
+    'HEAD': (x) => x[0],
+    'TAIL': (x) => x.slice(1)
 }
 
 // արտահայտության հաշվարկումը
-var evaluate = function(expr, env) {
+const evaluate = function(expr, env) {
     // թվի արժեքը ինքն է
     if( expr.kind == 'REAL' ) {
         return expr.value

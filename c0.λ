@@ -1,2 +1,0 @@
-
-apply lambda x y : + (* x x) (* y y) to 3 4

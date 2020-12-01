@@ -1,63 +1,63 @@
 
-var Expression = function(type) {
+const Expression = function(type) {
     this.type = type
 }
 
-var Real = function(value) {
+const Real = function(value) {
     Expression.call(this, 'R')
     this.value = value
 }
 
-var Text = function(value) {
+const Text = function(value) {
     Expression.call(this, 'T')
     this.value = value
 }
 
-var Variable = function(name) {
+const Variable = function(name) {
     Expression.call(this, name.endsWith('$') ? 'T' : 'R')
     this.name = name
 }
 
-var Unary = function(oper, se) {
+const Unary = function(oper, se) {
     Expression.call(this, '?')
     this.operation = oper
     this.subexpr = se
 }
 
-var Binary = function(oper, seo, sei) {
+const Binary = function(oper, seo, sei) {
     Expression.call(this, '?')
     this.operation = oper
     this.left = seo
     this.right = sei
 }
 
-var Apply = function(callee, args) {
+const Apply = function(callee, args) {
     Expression.call(this, '?')
     this.callee = callee
     this.args = args
 }
 
-var If = function(condition, decision, alternative) {
+const If = function(condition, decision, alternative) {
     Expression.call(this, '?')
     this.condition = condition
     this.decision = decision
     this.alternative = alternative
 }
 
-var Lambda = function(params, body) {
+const Lambda = function(params, body) {
     Expression.call(this, 'F')
     this.parameters = params
     this.body = body
 }
 
-
-
-module.exports.Expression = Expression
-module.exports.Real = Real
-module.exports.Text = Text
-module.exports.Variable = Variable
-module.exports.Unary = Unary
-module.exports.Binary = Binary
-module.exports.Apply = Apply
-module.exports.If = If
-module.exports.Lambda = Lambda
+module.exports = {
+    Expression,
+    Real,
+    Text,
+    Variable,
+    Unary,
+    Binary,
+    Apply,
+    If,
+    Lambda
+}

@@ -1,5 +1,5 @@
 
-var ps = require('./parser')
+var ps = require('../src/parser')
 
 const test0 = `
 let f is lambda x : * x x

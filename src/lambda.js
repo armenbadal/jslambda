@@ -1,18 +1,18 @@
 
-var ps = require('./parser')
-var ev = require('./evaluate')
+const ps = require('./parser')
+const ev = require('./evaluate')
 
-var rl = require('readline')
-var fs = require('fs')
+const rl = require('readline')
+const fs = require('fs')
 
 ///
-var evalSource = function(source) {
+const evalSource = function(source) {
     let parser = new ps.Parser()
     return ev.evaluate(parser.parse(source), {})
 }
 
 ///
-var repl = function() {
+const repl = function() {
     var rr = rl.createInterface({
         input: process.stdin,
         output: process.stdout,
@@ -30,14 +30,15 @@ var repl = function() {
 
         console.info(evalSource(line))
         rr.prompt()
-    }).on('close', () => {
+    })
+    .on('close', () => {
         console.info('αντίο')
         process.exit(0)
     });
 }
 
 ///
-var evalFile = function(path) {
+const evalFile = function(path) {
   if( !fs.existsSync(path) ) return;
 
   let prog = fs.readFileSync(path, {encoding: 'utf-8'})

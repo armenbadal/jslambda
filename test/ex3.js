@@ -1,7 +1,7 @@
 
-var ast = require('./ast')
-var interpreter = require('./interpreter')
-var checker = require('./checker')
+var ast = require('../src/ast')
+var interpreter = require('../src/interpreter')
+var checker = require('../src/checker')
 
 var r0 = new ast.Real(3.14)
 var t0 = new ast.Text('Ok')

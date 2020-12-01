@@ -1,9 +1,10 @@
 
 // Վերլուծության դասի սահմանումը
-var Parser = function() {
+const Parser = function() {
     // Լեզվի ծառայողական բառերի ցուցակը
     this.keywords = ['if', 'then', 'else', 'lambda', 'apply',
-                     'to', 'let', 'is', 'in', 'and', 'or']
+                     'to', 'let', 'is', 'in', 'and', 'or', 
+                     'cons', 'head', 'tail']
 
     // արտահայտությունը սկսող թոքենների ցուցակը. FIRST(expression)
     this.exprFirst = ['REAL', 'IDENT', '[', '(', 'OPER',

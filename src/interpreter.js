@@ -1,5 +1,5 @@
 
-var ast = require('./ast')
+const ast = require('./ast')
 
 ast.Real.prototype.evaluate = function(env) {
     return this.value
