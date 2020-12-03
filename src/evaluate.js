@@ -83,11 +83,11 @@ const builtins = {
     '<':  (x, y) => x < y ? 1.0 : 0.0,
     '<=': (x, y) => x <= y ? 1.0 : 0.0,
 
-    'OR':  (x, y) => x || y,
-    'AND': (x, y) => x && y,
+    '|': (x, y) => x || y,
+    '&': (x, y) => x && y,
 
     'CONS': (x, y) => [x].concat(y),
-    'HEAD': (x) => x[0],
+    'HEAD': (x) => 'myau', //x[0],
     'TAIL': (x) => x.slice(1)
 }
 
@@ -106,13 +106,15 @@ const evaluate = function(expr, env) {
 
     // ցուցակը որպես արժեք
     if( expr.kind == 'LIST' ) {
-        return expr
+        return expr.items.map(e => evaluate(e, env))
     }
 
     // հաշվարկել արգումենտները, ապա գործողությունը
     // կրառել ստացված արժեքներին (վերանայե՛լ)
     if( expr.kind == 'BUILTIN' ) {
+        //console.log(expr)
         let evags = expr.arguments.map(e => evaluate(e, env))
+        console.log(evags)
         return evags.reduce(builtins[expr.operation])
     }
 

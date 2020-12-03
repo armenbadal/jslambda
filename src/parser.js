@@ -3,8 +3,10 @@
 const Parser = function() {
     // Լեզվի ծառայողական բառերի ցուցակը
     this.keywords = ['if', 'then', 'else', 'lambda', 'apply',
-                     'to', 'let', 'is', 'in', 'and', 'or', 
-                     'cons', 'head', 'tail']
+                     'to', 'let', 'is', 'in', 'and']
+
+    // անվանված գործողություններ
+    this.operations = ['cons', 'head', 'tail']
 
     // արտահայտությունը սկսող թոքենների ցուցակը. FIRST(expression)
     this.exprFirst = ['REAL', 'IDENT', '[', '(', 'OPER',
@@ -27,6 +29,14 @@ Parser.prototype.scanOne = function(text) {
     // ծառայողական բառեր և իդենտիֆիկատորներ
     mc = /^[a-zA-Z][0-9a-zA-Z]*/.exec(text)
     if( mc != null ) {
+        if( this.operations.includes(mc[0]) ) {
+            return {
+                token: 'OPER',
+                value: mc[0].toUpperCase(),
+                rest: text.substring(mc[0].length)
+            }
+        }
+
         return {
             token: this.keywords.includes(mc[0]) ? mc[0].toUpperCase() : 'IDENT',
             value: mc[0],
@@ -55,7 +65,7 @@ Parser.prototype.scanOne = function(text) {
     }
 
     // գործողությունների նշաններ
-    mc = /^(\+|\-|\*|\/|=|<>|>|>=|<|<=)/.exec(text)
+    mc = /^(\+|\-|\*|\/|=|<>|>|>=|<|<=|&|\|)/.exec(text)
     if( mc != null ) {
         return {
             token: 'OPER',
