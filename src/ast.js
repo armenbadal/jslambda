@@ -13,8 +13,13 @@ const Text = function(value) {
     this.value = value
 }
 
+const List = function(value) {
+    Expression.call(this, 'L')
+    this.value = value
+}
+
 const Variable = function(name) {
-    Expression.call(this, name.endsWith('$') ? 'T' : 'R')
+    Expression.call(this, name.endsWith('$') ? 'T' : 'R') // 
     this.name = name
 }
 
@@ -54,6 +59,7 @@ module.exports = {
     Expression,
     Real,
     Text,
+    List,
     Variable,
     Unary,
     Binary,

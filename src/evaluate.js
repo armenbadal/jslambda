@@ -112,9 +112,7 @@ const evaluate = function(expr, env) {
     // հաշվարկել արգումենտները, ապա գործողությունը
     // կրառել ստացված արժեքներին (վերանայե՛լ)
     if( expr.kind == 'BUILTIN' ) {
-        //console.log(expr)
         let evags = expr.arguments.map(e => evaluate(e, env))
-        console.log(evags)
         return evags.reduce(builtins[expr.operation])
     }
 
