@@ -2,14 +2,14 @@
 // Վերլուծության դասի սահմանումը
 const Parser = function() {
     // Լեզվի ծառայողական բառերի ցուցակը
-    this.keywords = ['if', 'then', 'else', 'lambda', 'apply',
-                     'to', 'let', 'is', 'in', 'and']
+    this.keywords = ['if', 'then', 'else', 'lambda', 'apply', 'to',
+                     'let', 'is', 'in', 'and', 'true', 'false']
 
     // անվանված գործողություններ
     this.operations = ['cons', 'head', 'tail']
 
     // արտահայտությունը սկսող թոքենների ցուցակը. FIRST(expression)
-    this.exprFirst = ['REAL', 'IDENT', '[', '(', 'OPER',
+    this.exprFirst = ['REAL', 'BOOL', 'IDENT', '[', '(', 'OPER',
                       'IF', 'LAMBDA', 'APPLY']
 }
 
@@ -45,7 +45,7 @@ Parser.prototype.scanOne = function(text) {
     }
 
     // իրական թվեր
-    mc = /^[0-9]+(\.[0-9]+)?/.exec(text)
+    mc = /^\d+(\.\d+)?/.exec(text)
     if( mc != null ) {
         return {
             token: 'REAL',
@@ -55,7 +55,7 @@ Parser.prototype.scanOne = function(text) {
     }
 
     // ծառայողական սիմվոլներ (մետասիմվոլներ)
-    mc = /^(\(|\)|\[|\]|:)/.exec(text)
+    mc = /^([\(\)\[\]:])/.exec(text)
     if( mc != null ) {
         return {
             token: mc[0],
@@ -113,7 +113,8 @@ Parser.prototype.head = function() {
 Parser.prototype.match = function(exp) {
     if( this.have(exp) )
         return this.next()
-    throw `Syntax error: expected ${exp} but got ${this.head()}.}`
+
+    throw new Error(`Syntax error: expected ${exp} but got ${this.head()}.}`)
 }
 
 
@@ -211,7 +212,7 @@ Parser.prototype.expression = function() {
         return { kind: 'LET', bindings: nvs, body: dy }
     }
 
-    throw 'Syntax error. Unexpected start of expression.'
+    throw new Error('Syntax error. Unexpected start of expression.')
 }
 
 // ծրագրի տեքստի վերլուծություն
@@ -220,4 +221,4 @@ Parser.prototype.parse = function(text) {
     return this.expression()
 }
 
-module.exports.Parser = Parser
+export default { Parser }

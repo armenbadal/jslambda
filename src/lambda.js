@@ -1,19 +1,19 @@
 
-const ps = require('./parser')
-const ev = require('./evaluate')
+import { Parser } from './parser'
+import { evaluate } from './evaluate'
 
-const rl = require('readline')
-const fs = require('fs')
+import { createInterface } from 'readline'
+import { existsSync, readFileSync } from 'fs'
 
 ///
 const evalSource = function(source) {
-    let parser = new ps.Parser()
-    return ev.evaluate(parser.parse(source), {})
+    let parser = new Parser()
+    return evaluate(parser.parse(source), {})
 }
 
 ///
 const repl = function() {
-    var rr = rl.createInterface({
+    var rr = createInterface({
         input: process.stdin,
         output: process.stdout,
         prompt: 'λάμδα> ',
@@ -39,9 +39,9 @@ const repl = function() {
 
 ///
 const evalFile = function(path) {
-  if( !fs.existsSync(path) ) return;
+  if( !existsSync(path) ) return;
 
-  let prog = fs.readFileSync(path, {encoding: 'utf-8'})
+  let prog = readFileSync(path, {encoding: 'utf-8'})
   console.info(evalSource(prog))
 }
 

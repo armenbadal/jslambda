@@ -1,0 +1,25 @@
+{
+  "name": "jslambda",
+  "version": "0.0.2",
+  "description": "Լամբդա լեզվի իրականացում ՋավաՍկրիպտով։",
+  "main": "lambda.js",
+  "type": "module",
+  "directories": {},
+  "scripts": {
+    "jl": "node src/lambda.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/armenbadal/jslambda.git"
+  },
+  "keywords": [
+    "lambda",
+    "parser",
+    "interpreter"
+  ],
+  "author": "Armen Badalian",
+  "bugs": {
+    "url": "https://github.com/armenbadal/jslambda/issues"
+  },
+  "homepage": "https://github.com/armenbadal/jslambda#readme"
+}
