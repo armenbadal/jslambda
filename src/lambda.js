@@ -1,14 +1,14 @@
 
-import { Parser } from './parser'
-import { evaluate } from './evaluate'
+import { Parser } from './parser.js'
+import { evaluate } from './evaluate.js'
 
 import { createInterface } from 'readline'
 import { existsSync, readFileSync } from 'fs'
 
 ///
 const evalSource = function(source) {
-    let parser = new Parser()
-    return evaluate(parser.parse(source), {})
+    let pr = new Parser()
+    return evaluate(pr.parse(source), {})
 }
 
 ///

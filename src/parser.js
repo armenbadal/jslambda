@@ -1,3 +1,4 @@
+'use strict'
 
 // Վերլուծության դասի սահմանումը
 const Parser = function() {
@@ -14,7 +15,7 @@ const Parser = function() {
 }
 
 // Տեքստից կարդալ մեկ (թոքեն, լեքսեմ) զույգ
-Parser.prototype.scanOne = function(text) {
+Parser.prototype.scanOne = function (text) {
     // տեքստի վերջը
     if( text == '' ) {
         return { token: 'EOS', value:'EOS', rest: '' }
@@ -79,7 +80,7 @@ Parser.prototype.scanOne = function(text) {
 }
 
 // Կարդալ բոլոր (թոքեն, լեքսեմ) զույգերն ու վերադարձնել ցուցակ
-Parser.prototype.scanAll = function(text) {
+Parser.prototype.scanAll = function (text) {
     let res = []
     let ec = this.scanOne(text)
     while( ec.token != 'EOS' ) {
@@ -87,39 +88,45 @@ Parser.prototype.scanAll = function(text) {
         ec = this.scanOne(ec.rest)
     }
     res.push({ token: 'EOS', value: 'EOS' })
-    res.current = 0
     return res
 }
 
 // ստուգել ցուցակի ընթացիկ տարրը
-Parser.prototype.have = function(exp) {
-    let headtok = this.lexemes[this.lexemes.current].token
+Parser.prototype.have = function (exp) {
+    let headtok = this.lexemes[0].token
 
     if( exp instanceof Array )
         return exp.includes(headtok)
 
     return headtok == exp
 }
+
 // անցնել հաջորդին, և վերադարձնել նախորդի արժեքը
-Parser.prototype.next = function() {
-    return this.lexemes[this.lexemes.current++].value
+Parser.prototype.next = function () {
+    return this.lexemes.shift().value
 }
+
 // ընթացիկ լեքսեմի արժեքը
-Parser.prototype.head = function() {
-    let ci = this.lexemes.current
-    return this.lexemes[ci].value
+Parser.prototype.head = function () {
+    return this.lexemes[0].value
 }
+
 // ստուգել և անցնել հաջորդին
-Parser.prototype.match = function(exp) {
+Parser.prototype.match = function (exp) {
     if( this.have(exp) )
         return this.next()
 
     throw new Error(`Syntax error: expected ${exp} but got ${this.head()}.}`)
 }
 
-
 // Արտահայտությունների վերլուծությունը
-Parser.prototype.expression = function() {
+Parser.prototype.expression = function () {
+    // բուլյան հաստատուն
+    if( this.have('TRUE') || this.have('FALSE') ) {
+        let vl = this.next()
+        return { kind: 'BOOL', value: vl === 'TRUE' } 
+    }
+
     // իրական թիվ
     if( this.have('REAL') ) {
         let vl = this.next()
@@ -216,9 +223,9 @@ Parser.prototype.expression = function() {
 }
 
 // ծրագրի տեքստի վերլուծություն
-Parser.prototype.parse = function(text) {
+Parser.prototype.parse = function (text) {
     this.lexemes = this.scanAll(text)
     return this.expression()
 }
 
-export default { Parser }
+export { Parser }

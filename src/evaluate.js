@@ -92,32 +92,32 @@ const builtins = {
 }
 
 // արտահայտության հաշվարկումը
-const evaluate = function(expr, env) {
+const evaluate = function (expr, env) {
     // թվի արժեքը ինքն է
-    if( expr.kind == 'REAL' ) {
+    if( expr.kind === 'REAL' || expr.kind === 'BOOL' ) {
         return expr.value
     }
 
     // փոփոխականի արժեքը պետք է վերցնել
     // կատարման միջավայրից
-    if( expr.kind == 'VAR' ) {
+    if( expr.kind === 'VAR' ) {
         return env[expr.name]
     }
 
     // ցուցակը որպես արժեք
-    if( expr.kind == 'LIST' ) {
+    if( expr.kind === 'LIST' ) {
         return expr.items.map(e => evaluate(e, env))
     }
 
     // հաշվարկել արգումենտները, ապա գործողությունը
     // կրառել ստացված արժեքներին (վերանայե՛լ)
-    if( expr.kind == 'BUILTIN' ) {
+    if( expr.kind === 'BUILTIN' ) {
         let evags = expr.arguments.map(e => evaluate(e, env))
         return evags.reduce(builtins[expr.operation])
     }
 
     //
-    if( expr.kind == 'IF' ) {
+    if( expr.kind === 'IF' ) {
         let co = evaluate(expr.condition, env)
         if( co !== 0.0 )
             return evaluate(expr.decision, env)
@@ -125,7 +125,7 @@ const evaluate = function(expr, env) {
     }
 
     // լամբդայի հաշվարկման արդյունքում ստացվում է closure
-    if( expr.kind == 'LAMBDA' ) {
+    if( expr.kind === 'LAMBDA' ) {
         // լամբդա օբյեկտի պատճեն
         let clos = Object.assign({}, expr)
         // ազատ փոփոխականները
@@ -137,11 +137,12 @@ const evaluate = function(expr, env) {
     }
 
     // closure-ի կիրառումը արգումենտներին
-    if( expr.kind == 'APPLY' ) {
+    if( expr.kind === 'APPLY' ) {
         // հաշվարկել կիրառելին
         let clos = evaluate(expr.callee, env)
-        if( clos.kind != 'LAMBDA' )
+        if( clos.kind !== 'LAMBDA' )
             throw new Error('Evaluation error.')
+
         // հաշվարկել արգումենտները
         let evags = expr.arguments.map(e => evaluate(e, env))
         // կառուցել նոր միջավայր, որը closure-ի capture-ից
@@ -155,7 +156,7 @@ const evaluate = function(expr, env) {
     }
 
     // կապերի ստեղծում
-    if( expr.kind == 'LET' ) {
+    if( expr.kind === 'LET' ) {
         let nenv = Object.create({}, env)
         for( let nv of expr.bindings ) {
             nenv[nv.name] = null
@@ -173,4 +174,4 @@ const evaluate = function(expr, env) {
 }
 
 
-module.exports.evaluate = evaluate
+export { evaluate }
