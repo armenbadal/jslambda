@@ -1,6 +1,6 @@
 'use strict'
 
-import { Parser } from './parser.js'
+import { parse } from './parser.js'
 import { evaluate } from './evaluate.js'
 
 import { createInterface } from 'readline'
@@ -8,8 +8,8 @@ import { existsSync, readFileSync } from 'fs'
 
 ///
 const evalSource = function (source) {
-  const pr = new Parser()
-  const ast = pr.parse(source)
+  const ast = parse(source)
+  //console.log(JSON.stringify(ast, null, 2))
   return evaluate(ast, {})
 }
 

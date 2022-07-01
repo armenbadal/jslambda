@@ -1,3 +1,4 @@
+'use strict'
 
 // flatten array of arrays
 const flatten = function (arrs) {
@@ -86,8 +87,9 @@ const builtins = {
   '&': (x, y) => x && y,
 
   CONS: (x, y) => [x].concat(y),
-  HEAD: (x) => 'myau', // x[0],
-  TAIL: (x) => x.slice(1)
+  HEAD: (x) => x[0],
+  TAIL: (x) => x.slice(1),
+  LENGTH: (x) => x.length
 }
 
 // արտահայտության հաշվարկումը
@@ -112,14 +114,16 @@ const evaluate = function (expr, env) {
   // կրառել ստացված արժեքներին (վերանայե՛լ)
   if (expr.kind === 'BUILTIN') {
     const evags = expr.arguments.map(e => evaluate(e, env))
+    if (expr.operation === 'HEAD' || expr.operation === 'TAIL' || expr.operation === 'LENGTH') {
+      return builtins[expr.operation](evags[0])
+    }
     return evags.reduce(builtins[expr.operation])
   }
 
-  //
+  // պայմանով երկու արժեքներից ընտրության գործողություն
   if (expr.kind === 'IF') {
     const co = evaluate(expr.condition, env)
-    if (co !== 0.0) { return evaluate(expr.decision, env) }
-    return evaluate(expr.alternative, env)
+    return co ? evaluate(expr.decision, env) : evaluate(expr.alternative, env)
   }
 
   // լամբդայի հաշվարկման արդյունքում ստացվում է closure
@@ -129,7 +133,9 @@ const evaluate = function (expr, env) {
     // ազատ փոփոխականները
     const fvs = freeVariables(clos)
     // նոր միջավայրի կառուցում
-    for (const v of fvs) { clos.captures[v] = env[v] }
+    for (const v of fvs) {
+      clos.captures[v] = env[v]
+    }
     return clos
   }
 

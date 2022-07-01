@@ -6,7 +6,8 @@
   "type": "module",
   "directories": {},
   "scripts": {
-    "jl": "node src/lambda.js"
+    "jl": "node ./src/lambda.js",
+    "st": "standard ./src"
   },
   "repository": {
     "type": "git",
