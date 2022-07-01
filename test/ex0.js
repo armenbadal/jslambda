@@ -1,6 +1,10 @@
 
-const ps = require('../src/parser')
-const ev = require('../src/evaluate')
+import { Parser } from '../src/parser.js'
+import { evaluate } from '../src/evaluate.js'
+
+const print = function (oj) {
+    console.log(JSON.stringify(oj, null, 2))
+}
 
 const test0 = `
 let f is lambda x : * x x
@@ -30,7 +34,7 @@ head [3 2 1]
 // let ast2 = (new ps.Parser()).parse(test2)
 // console.log(ast2)
 
-let ast3 = (new ps.Parser()).parse(test3)
-console.log(ast3)
-let res3 = ev.evaluate(ast3, {})
-console.log(res3)
+let ast3 = (new Parser()).parse(test3)
+print(ast3)
+let res3 = evaluate(ast3, {})
+print(res3)
