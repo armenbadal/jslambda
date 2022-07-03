@@ -509,19 +509,12 @@ if (expr.kind === 'LIST') {
 
 `BUILTIN` տիպի հանգույցի արժեքը ստանալու համար պետք է նախ հաշվարկել
 `arguments` ցուցակի արտահայտությունների արժեքները, ապա գրանց նկատմամբ
-կիրառել `operation` սլոթում գրանցված գործողությունը։ Երկտեղանի
-գործողությունները կիրառվում են ցուցակների `reduce` մեթոդով, իսկ
-միտեղանի գործողությունները կիրառվում են ուղղակիորեն։
+կիրառել `operation` սլոթում գրանցված գործողությունը։
 
 ```JavaScript
 if (expr.kind === 'BUILTIN') {
   const evags = expr.arguments.map(e => evaluate(e, env))
-  if (expr.operation === 'HEAD' ||
-      expr.operation === 'TAIL' ||
-      expr.operation === 'LENGTH') {
-    return builtins[expr.operation](evags[0])
-  }
-  return evags.reduce(builtins[expr.operation])
+  return builtins[expr.operation].apply(null, evags)
 }
 ```
 
@@ -554,9 +547,7 @@ if (expr.kind === 'LAMBDA') {
   // ազատ փոփոխականները
   const fvs = freeVariables(clos)
   // նոր միջավայրի կառուցում
-  for (const v of fvs) {
-    clos.captures[v] = env[v]
-  }
+  fvs.forEach(v => clos.captures[v] = env[v])
   return clos
 }
 ```
@@ -566,32 +557,58 @@ if (expr.kind === 'LAMBDA') {
 այս տրված ծրագրի վերլուծությունը կառուցելու է այսպիսի մի օբյեկտ.
 
 ```JavaScript
-{ kind: 'LAMBDA',
+{
+  kind: 'LAMBDA',
   parameters: [ 'y' ],
-  body:
-   { kind: 'BUILTIN',
-     operation: '+',
-     arguments: [ [Object], [Object] ] },
-  captures: {} }
+  body: {
+    kind: 'BUILTIN',
+    operation: '+',
+    'arguments': [
+      {
+        kind: 'VAR',
+        name: 'x'
+      },
+      {
+        kind: 'VAR',
+        name: 'y'
+      }
+    ]
+  },
+  captures: {}
+}
 ```
 
 Երբ այս օբյեկտը հաշվարկում եմ `{ 'x': 7 }` միջավայրում, ստանում եմ նույն
 օբյեկտը, բայց արդեն լրացված `captures` սլոթով։
 
 ```JavaScript
-{ kind: 'LAMBDA',
+{
+  kind: 'LAMBDA',
   parameters: [ 'y' ],
-  body:
-   { kind: 'BUILTIN',
-     operation: '+',
-     arguments: [ [Object], [Object] ] },
-  captures: { x: 7 } }
+  body: {
+    kind: 'BUILTIN',
+    operation: '+',
+    'arguments': [
+      {
+        kind: 'VAR',
+        name: 'x'
+      },
+      {
+        kind: 'VAR',
+        name: 'y'
+      }
+    ]
+  },
+  captures: {
+    x: 7
+  }
+}
 ```
 
 `apply` _f_ `to` _e0 e1 ... en_ արտահայտության հաշվարկման սեմանտիկան
 (իմաստը) _f_ ֆունկցիայի՝ _e0 e1 ... en_ արտահայտությունների նկատմամբ
 կիրառելն է։ Քանի որ, ըստ Լամբդա լեզվի քերականության, _f_-ը նույնպես
-արտահայտությունը է, ապա նախ՝ պետք է հաշվարկել այն և համոզվել, որ ստացվել
+արտահայտություն է, ապա նախ՝ պետք է հաշվարկել այն և համոզվել, որ ստացվել
 է _կիրառելի_ օբյեկտ՝ closure (թող դա կոչվի _f'_), որի `captures`-ը
 պարունակում է լամբդայի մարմնի ազատ փոփոխականների արժեքները (bindings)։
 Հետո պետք է հաշվարկել `APPLY` օբյեկտի `arguments` սլոթին կապված ցուցակի
@@ -603,17 +620,78 @@ if (expr.kind === 'LAMBDA') {
 
 ```JavaScript
 if( expr.kind == 'APPLY' ) {
-    let clos = evaluate(expr.callee, env)
-    if( clos.kind != 'LAMBDA' )
-        throw 'Evaluation error.'
-    let nenv = Object.assign({}, clos.captures)
-    let evags = expr.arguments.map(e => evaluate(e, env))
-    let count = Math.min(clos.parameters.length, evags.length)
-    for( let k = 0; k < count; ++k )
-        nenv[clos.parameters[k]] = evags[k]
-    return evaluate(clos.body, nenv)
+  // հաշվարկել կիրառելին
+  const clos = evaluate(expr.callee, env)
+  if (clos.kind !== 'LAMBDA') {
+    throw new Error('Evaluation error.')
+  }
+
+  // հաշվարկել արգումենտները
+  const evags = expr.arguments.map(e => evaluate(e, env))
+  // կառուցել նոր միջավայր, որը closure-ի capture-ից
+  // և closure-ի պարամետրերին կապված արգումենտներից
+  const nenv = Object.assign({}, env, clos.captures)
+  const count = Math.min(clos.parameters.length, evags.length)
+  for (let k = 0; k < count; ++k) {
+    nenv[clos.parameters[k]] = evags[k]
+  }
+  // closure-ի մարմինը հաշվարկել նոր միջավայրում
+  return evaluate(clos.body, nenv)
 }
 ```
+
+`LET` կառուցվածքը նոր կապեր է ստեղծում անունների ու արժեքների միջև։
+Այդ ստեղծված կապերը կարող են օգտագործվել `IN` բառից հետո գրված
+արտահայտության մեջ։ 
+
+```JavaScript
+if (expr.kind === 'LET') {
+  // կառուցել նոր միջավայր
+  const nenv = Object.create({}, env)
+  // հաշվարկել բոլոր կապերը և գրառել նոր միջավայրում
+  for (const nv of expr.bindings) {
+    nenv[nv.name] = null
+    const ev = evaluate(nv.value, nenv)
+    if (typeof ev === 'object' && ev.kind === 'LAMBDA') {
+      if (nv.name in ev.captures) {
+        delete ev.captures[nv.name]
+      }
+    }
+    nenv[nv.name] = ev
+  }
+  // հաշվարկել ու վերադարձնել let-ի մարմինը
+  return evaluate(expr.body, nenv)
+}
+```
+
+Սա հնարավորություն է տալիս նաև սահմանել ռեկուրսիվ ֆունկցիաներ։ Օրինակ.
+
+```
+let
+  pi is 3.1415
+in
+  lambda r : * pi r r
+```
+
+Այստեղ նախ՝ `pi` սիմվոլին կապվում է `3.1415` արժեքը, ապա՝ `let`-ի մարմնում
+`pi`-ն օգտագործվում է անանուն ֆունկցիայի սահմանման մեջ։
+
+Մի այլ օրինակ։ Թվի ֆակտորիալը հաշվող պապենական ֆունկցիան կարող  ենք
+սահմանել այսպես.
+
+```
+let
+  fact is lambda n:
+    if (= n 1)
+    then 1
+    else * n (apply fact to - n 1)
+in
+  apply fact to 10
+```
+
+Սա հաշվարկում է 10-ի ֆակտորիալը։
+
+
 
 
 ## Օգտագործումը
@@ -688,49 +766,6 @@ else {
     repl()
 }
 ```
-
-
-## Ընդլայնումներ
-
-Չնայած որ իրականացված լեզուն բավարար է թվային ալգորիթմների իրականացման
-համար, այնուամենայնիվ այն դեռ բավականին «անհարմար» գործիք է։ Օրինակ, ես
-կարող եմ սահմանել անանուն ֆունկցիաներ ու դրանք կիրառել արգումենտների 
-(արտահայտությունների) նկատմամբ, ինչպես նաև (երևի թե) կարող եմ ռեկուրսիայի
-օգնությամբ, օգտագործելով որևէ _ֆիքսված կետի կոմբինատոր_, գրել կրկնություն
-պարունակող ալգորիթմներ, և այլն։ Ավելի մանրամասն տես, օրինակ,
-[The Lambda Calculus](https://plato.stanford.edu/entries/lambda-calculus/)
-tanford Encyclopedia of Philosophy էջում։ Բայց, քիչ թե շատ հարմար, ընթեռնելի
-ու հասկանալի ծրագրեր գրելու համար ինձ պետք է, առաջին հերթին, ունենալ
-_սահմանումների_ մեխանիզմ։ Հենց թեկուզ հանրահայտ `let`-ը։ Լամբդա լեզվում
-այն կարող է ունենալ այսպիսի տեսք.
-
-```
-let
-  pi is 3.1415
-in
-  lambda r : * pi r r
-```
-
-Այստեղ նախ՝ `pi` սիմվոլին կապվում է `3.1415` արժեքը, ապա՝ `let`-ի մարմնում
-`pi`-ն օգտագործվում է արտահայտության մեջ։
-
-Մի այլ օրինակ։ Թվի ֆակտորիալը հաշվող պապենական ֆունկցիան կարող  է 
-սահմանվել հետևյալ կերպ.
-
-```
-let
-  fact is lambda n : if (= n 1) then 1 else * n (apply fact to - n 1)
-in
-  apply fact to 10
-```
-
-Այս դեպքում `let` կառուցվածքի ինտերպրետացիան պետք է կազմակերպել 
-այնպես, որ ապահովվի ռեկուրսիան՝ սահմանման մեջ պետք է թույլատրվի
-սահմանվող սիմվոլի օգտագործումը։
-
-Լեզվի մեկ այլ ընդլայնում կարող է լինել նոր տիպերի հետ աշխատանքը. օրինակ,
-տեքստային տիպ և ցուցակներ։ Հենց թեկուզ այս երկու տիպերը կարող են էապես
-ընդլայնել Լամբդա լեզվով մոդելավորվող ալգորիթմների դասը։
 
 
 

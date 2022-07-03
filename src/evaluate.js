@@ -41,23 +41,21 @@ const freeVariables = function (expr) {
     return fvs.filter(e => !expr.parameters.includes(e))
   }
 
-  // կիրառման գործողության համար միավորվում են կիրառվող
-  // ֆունկցիայի և արգումենտների ազատ փոփոխականների
-  // բազմությունները
+  // կիրառման գործողության համար միավորվում են կիրառվող ֆունկցիայի
+  // և արգումենտների ազատ փոփոխականների բազմությունները
   if (expr.kind === 'APPLY') {
     const fvs = freeVariables(expr.callee)
-    fvs.concat(flatten(expr.arguments.map(freeVariables)))
-    return fvs
+    return fvs.concat(flatten(expr.arguments.map(freeVariables)))
   }
 
   // x փոփոխականն ազատ է LET արտահայտության մեջ, եթե այն
   // ազատ է մարմնում և LET-ի փոփոխականներից որևէ մեկը չէ
   if (expr.kind === 'LET') {
     const pvs = []
-    const fvs = []
+    let fvs = []
     for (const ve of expr.bindings) {
       pvs.push(ve.name)
-      fvs.concat(freeVariables(ve.value))
+      fvs = fvs.concat(freeVariables(ve.value))
     }
 
     const bvs = freeVariables(expr.body).filter(e => !pvs.includes(e))
@@ -76,12 +74,12 @@ const builtins = {
   '*': (x, y) => x * y,
   '/': (x, y) => x / y,
 
-  '=': (x, y) => x === y ? 1.0 : 0.0,
-  '<>': (x, y) => x !== y ? 1.0 : 0.0,
-  '>': (x, y) => x > y ? 1.0 : 0.0,
-  '>=': (x, y) => x >= y ? 1.0 : 0.0,
-  '<': (x, y) => x < y ? 1.0 : 0.0,
-  '<=': (x, y) => x <= y ? 1.0 : 0.0,
+  '=': (x, y) => x === y,
+  '<>': (x, y) => x !== y,
+  '>': (x, y) => x > y,
+  '>=': (x, y) => x >= y,
+  '<': (x, y) => x < y,
+  '<=': (x, y) => x <= y,
 
   '|': (x, y) => x || y,
   '&': (x, y) => x && y,
@@ -114,10 +112,7 @@ const evaluate = function (expr, env) {
   // կրառել ստացված արժեքներին (վերանայե՛լ)
   if (expr.kind === 'BUILTIN') {
     const evags = expr.arguments.map(e => evaluate(e, env))
-    if (expr.operation === 'HEAD' || expr.operation === 'TAIL' || expr.operation === 'LENGTH') {
-      return builtins[expr.operation](evags[0])
-    }
-    return evags.reduce(builtins[expr.operation])
+    return builtins[expr.operation].apply(null, evags)
   }
 
   // պայմանով երկու արժեքներից ընտրության գործողություն
@@ -133,9 +128,8 @@ const evaluate = function (expr, env) {
     // ազատ փոփոխականները
     const fvs = freeVariables(clos)
     // նոր միջավայրի կառուցում
-    for (const v of fvs) {
-      clos.captures[v] = env[v]
-    }
+    fvs.forEach(v => clos.captures[v] = env[v])
+    console.log(JSON.stringify(clos, null, 2))
     return clos
   }
 
@@ -143,7 +137,9 @@ const evaluate = function (expr, env) {
   if (expr.kind === 'APPLY') {
     // հաշվարկել կիրառելին
     const clos = evaluate(expr.callee, env)
-    if (clos.kind !== 'LAMBDA') { throw new Error('Evaluation error.') }
+    if (clos.kind !== 'LAMBDA') {
+      throw new Error('Evaluation error.')
+    }
 
     // հաշվարկել արգումենտները
     const evags = expr.arguments.map(e => evaluate(e, env))
@@ -151,22 +147,29 @@ const evaluate = function (expr, env) {
     // և closure-ի պարամետրերին կապված արգումենտներից
     const nenv = Object.assign({}, env, clos.captures)
     const count = Math.min(clos.parameters.length, evags.length)
-    for (let k = 0; k < count; ++k) { nenv[clos.parameters[k]] = evags[k] }
+    for (let k = 0; k < count; ++k) {
+      nenv[clos.parameters[k]] = evags[k]
+    }
     // closure-ի մարմինը հաշվարկել նոր միջավայրում
     return evaluate(clos.body, nenv)
   }
 
   // կապերի ստեղծում
   if (expr.kind === 'LET') {
+    // կառուցել նոր միջավայր
     const nenv = Object.create({}, env)
+    // հաշվարկել բոլոր կապերը և գրառել նոր միջավայրում
     for (const nv of expr.bindings) {
       nenv[nv.name] = null
       const ev = evaluate(nv.value, nenv)
       if (typeof ev === 'object' && ev.kind === 'LAMBDA') {
-        if (nv.name in ev.captures) { delete ev.captures[nv.name] }
+        if (nv.name in ev.captures) {
+          delete ev.captures[nv.name]
+        }
       }
       nenv[nv.name] = ev
     }
+    // հաշվարկել ու վերադարձնել let-ի մարմինը
     return evaluate(expr.body, nenv)
   }
 
