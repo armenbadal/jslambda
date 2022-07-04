@@ -9,7 +9,6 @@ import { existsSync, readFileSync } from 'fs'
 ///
 const evalSource = function (source) {
   const ast = parse(source)
-  //console.log(JSON.stringify(ast, null, 2))
   return evaluate(ast, {})
 }
 
@@ -33,18 +32,18 @@ const repl = function () {
     console.info(evalSource(line))
     rr.prompt()
   })
-    .on('close', () => {
-      console.info('αντίο')
-      process.exit(0)
-    })
+  .on('close', () => {
+    console.info('αντίο')
+    process.exit(0)
+  })
 }
 
 ///
 const evalFile = function (path) {
-  if (!existsSync(path)) return
-
-  const prog = readFileSync(path, { encoding: 'utf-8' })
-  console.info(evalSource(prog))
+  if (existsSync(path)) {
+    const prog = readFileSync(path, { encoding: 'utf-8' })
+    console.info(evalSource(prog))
+  }
 }
 
 ///

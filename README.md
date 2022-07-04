@@ -518,6 +518,35 @@ if (expr.kind === 'BUILTIN') {
 }
 ```
 
+`builtin` օբյեկտում սահմանված են որոշ ներդրված գործողություններ։ Դրանցից 
+մի քանիսը թվային գործողություններ են, իսկ որոշները՝ ցուցակների հետ կատարվող 
+գործողություններ։ Ահա դրանց սահմանումը.
+
+```JavaScript
+// ներդրված գործողությունների վարքը
+const builtins = {
+  '+': (x, y) => x + y,
+  '-': (x, y) => x - y,
+  '*': (x, y) => x * y,
+  '/': (x, y) => x / y,
+
+  '=': (x, y) => x === y,
+  '<>': (x, y) => x !== y,
+  '>': (x, y) => x > y,
+  '>=': (x, y) => x >= y,
+  '<': (x, y) => x < y,
+  '<=': (x, y) => x <= y,
+
+  '|': (x, y) => x || y,
+  '&': (x, y) => x && y,
+
+  CONS: (x, y) => [x].concat(y),
+  HEAD: (x) => x[0],
+  TAIL: (x) => x.slice(1),
+  LENGTH: (x) => x.length
+}
+```
+
 `IF` տիպի հանգույցը, որ պայմանական արտահայտության մոդելն է, հաշվարկելու
 համար նախ հաշվարկվում է `condition` սլոթի արժեքը՝ պայմանը։ Եթե այն տարբեր
 է `0.0` թվային արժեքից՝ _ճշմարիտ_ է, ապա հաշվարկվում և վերադարձվում է
@@ -691,7 +720,70 @@ in
 
 Սա հաշվարկում է 10-ի ֆակտորիալը։
 
+Այս լամբդա լեզվում արտահայտությունների մեջ _ազատ փոփոխակաները_ պարզելն 
+անհրաժեշտ է, որպեսզի closure-ի `captures` սլոթում դրանց արժեքներ կապվեն 
+և այդ արժեքներն օգտագործեն հաշվարկման ժամանակ։ Ալգորիթմը ռեկուրսիվ է ու
+դրա նկարագրությունը կարելի է գտնել ֆունկցիոնալ ծրագրավորման դասագրքերում։
+Ես բերում եմ `freeVariables` ֆունկցիայի կոդը՝ մանրամասն մեկնաբանություններով.
 
+```JavaScript
+const freeVariables = function (expr) {
+  // փոփոխականն ինքն ի սկզբանե ազատ է
+  if (expr.kind === 'VAR') {
+    return [expr.name]
+  }
+
+  // ներդրված գործողություններում ազատ փոփոխականների բազմությունը 
+  // արգումենտների ազատ փոփոխականների բազմությունների միավորումն է
+  if (expr.kind === 'BUILTIN') {
+    return expr.arguments.map(freeVariables).flat()
+  }
+
+  // պայմանական արտահայտության մեջ էլ պայմանի ու երկու 
+  // ենթաարտահայտությունների ազատ փոփոխականների բազմությունների
+  // միավորումն է
+  if (expr.kind === 'IF') {
+    let fvs = freeVariables(expr.condition)
+    fvs = fvs.concat(freeVariables(expr.decision))
+    fvs = fvs.concat(freeVariables(expr.alternative))
+    return fvs
+  }
+
+  // աբստրակցիայի գործողությունըը միակն է, որ ստեղծում է կապված
+  // փոփոխականներ; այստեղ ազատ փոփոխականների բազմությունը ստացվում 
+  // է մարմնի ազատ փոփոխականների բազմությունից լամբդա արտահայտության 
+  // պարամետրերը հեռացնելով
+  if (expr.kind === 'LAMBDA') {
+    const fvs = freeVariables(expr.body)
+    return fvs.filter(e => !expr.parameters.includes(e))
+  }
+
+  // կիրառման գործողության համար միավորվում են կիրառվող ֆունկցիայի
+  // և արգումենտների ազատ փոփոխականների բազմությունները
+  if (expr.kind === 'APPLY') {
+    const fvs = freeVariables(expr.callee)
+    return fvs.concat(expr.arguments.map(freeVariables).flat())
+  }
+
+  // x փոփոխականն ազատ է LET արտահայտության մեջ, եթե այն
+  // ազատ է մարմնում և LET-ի փոփոխականներից որևէ մեկը չէ
+  if (expr.kind === 'LET') {
+    const pvs = []
+    let fvs = []
+    for (const ve of expr.bindings) {
+      pvs.push(ve.name)
+      fvs = fvs.concat(freeVariables(ve.value))
+    }
+
+    const bvs = freeVariables(expr.body).filter(e => !pvs.includes(e))
+    return fvs.concat(bvs)
+  }
+
+  // ... այլ չդիտարկված դեպքերում արդյունքը
+  // դատարկ բազմություն է
+  return []
+}
+```
 
 
 ## Օգտագործումը
@@ -701,7 +793,7 @@ in
 _կարդալ_-_հաշվարկել_-_արտածել_-_կրկնել_)։ Դրա իրականացումը օգտագործողին
 առաջարկում է ներմուծել արտահայտություն, ապա հաշվարկում է այն և
 արտածում է արժեքը։ Այս երեք քայլերը կրկնվում են այնքան ժամանակ, քանի
-դեռ օգտագործողը, ի որևէ հատուկ հրամանով, չի ընդհատում աշխատանքը։
+դեռ օգտագործողը, մի որևէ հատուկ հրամանով, չի ընդհատում աշխատանքը։
 
 Որպես հրավերք ես ընտրել եմ հունարեն _λάμδα_ բառը, իսկ որպես աշխատանքի
 ավարտի ազդանշան՝ _///_ նիշերը։ Օգտագործող-ինտերպրետատոր երկխոսության
@@ -712,28 +804,37 @@ _կարդալ_-_հաշվարկել_-_արտածել_-_կրկնել_)։ Դրա ի
 (event) հետ աշխատանքի սկզբունքները։
 
 ```JavaScript
-var repl = function() {
-    var rr = rl.createInterface({
-        input: process.stdin,
-        output: process.stdout,
-        prompt: 'λάμδα> ',
-        terminal: false
-    });
+const repl = function () {
+  const rr = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+    prompt: 'λάμδα> ',
+    terminal: false
+  })
 
+  rr.prompt()
+
+  rr.on('line', (line) => {
+    if (line === '///') {
+      rr.close()
+      return
+    }
+
+    console.info(evalSource(line))
     rr.prompt()
+  })
+  .on('close', () => {
+    console.info('αντίο')
+    process.exit(0)
+  })
+}
+```
 
-    rr.on('line', (line) => {
-        if( line == 'end' ) {
-            rr.close()
-            return
-        }
+`evalSource` ֆունկցիան `parse` և `evaluate` ֆունկցիաների կոմպոզիցիան է.
 
-        console.info(ev.evaluate(ps.parse(line), {}))
-        rr.prompt()
-    }).on('close', () => {
-        console.info('Bye')
-        process.exit(0)
-    });
+```JavaScript
+const evalSource = function (source) {
+  return evaluate(parse(source), {})
 }
 ```
 
@@ -745,11 +846,11 @@ var repl = function() {
 հաշվարկը։
 
 ```JavaScript
-var evalFile = function(path) {
-  if( !fs.existsSync(path) ) return;
-
-  let prog = fs.readFileSync(path, {encoding: 'utf-8'})
-  console.info(ev.evaluate(ps.parse(prog), {}))
+const evalFile = function (path) {
+  if (existsSync(path)) {
+    const prog = readFileSync(path, { encoding: 'utf-8' })
+    console.info(evalSource(prog))
+  }
 }
 ```
 
@@ -759,11 +860,11 @@ var evalFile = function(path) {
 և կանչվում է `evalFile` ֆունկցիան։ Հակառակ դեպքում գործարկվում է REPL-ը։
 
 ```JavaScript
-if( process.argv.length > 2 ) {
-    evalFile(process.argv[2])
+if (process.argv.length > 2) {
+  evalFile(process.argv[2])
 }
 else {
-    repl()
+  repl()
 }
 ```
 
@@ -772,7 +873,7 @@ else {
 ## Աղբյուրներ
 
 Ֆունկցիոնալ լեզվի իրականացման հարցերը քննարկվում են շատ գրքերում ու
-հոդվածներում։ Ես անհրաժեշտ եմ համարում դրանցից մի քանիսի թվարկումը.
+հոդվածներում։ Ահա դրանցից մի քանիսը.
 
 1. Christian Queinnec, _Lisp in Small Pieces_, Cambridge University Press, 2003.
 2. Peter Norvig, _Paradigms of Artificial Intelligence Programming: Case Studies in Common Lisp_,  Morgan Kaufmann, 1991.

@@ -1,12 +1,5 @@
 'use strict'
 
-// flatten array of arrays
-const flatten = function (arrs) {
-  let res = []
-  for (const el of arrs) { res = res.concat(el) }
-  return res
-}
-
 // Ազատ փոփոխականների որոշումը
 const freeVariables = function (expr) {
   // փոփոխականն ինքն ի սկզբանե ազատ է
@@ -18,7 +11,7 @@ const freeVariables = function (expr) {
   // բազմությունը արգումենտների ազատ փոփոխականների
   // բազմությունների միավորումն է
   if (expr.kind === 'BUILTIN') {
-    return flatten(expr.arguments.map(freeVariables))
+    return expr.arguments.map(freeVariables).flat()
   }
 
   // պայմանական արտահայտության մեջ էլ պայմանի ու
@@ -31,9 +24,9 @@ const freeVariables = function (expr) {
     return fvs
   }
 
-  // աբստրակցիայի գործողությունըը միակն է, որ ստեղծում է
-  // կապված փոփոխականներ; այստեղ ազատ փոփոխականների
-  // բազմությունը ստացվում է մարմնի ազատ փոփոկականների
+  // աբստրակցիայի գործողությունըը միակն է, որ ստեղծում
+  // է կապված փոփոխականներ; այստեղ ազատ փոփոխականների
+  // բազմությունը ստացվում է մարմնի ազատ փոփոխականների
   // բազմությունից լամբդա արտահայտության պարամետրերը
   // հեռացնելով
   if (expr.kind === 'LAMBDA') {
@@ -45,7 +38,7 @@ const freeVariables = function (expr) {
   // և արգումենտների ազատ փոփոխականների բազմությունները
   if (expr.kind === 'APPLY') {
     const fvs = freeVariables(expr.callee)
-    return fvs.concat(flatten(expr.arguments.map(freeVariables)))
+    return fvs.concat(expr.arguments.map(freeVariables).flat())
   }
 
   // x փոփոխականն ազատ է LET արտահայտության մեջ, եթե այն
@@ -129,7 +122,6 @@ const evaluate = function (expr, env) {
     const fvs = freeVariables(clos)
     // նոր միջավայրի կառուցում
     fvs.forEach(v => clos.captures[v] = env[v])
-    console.log(JSON.stringify(clos, null, 2))
     return clos
   }
 
