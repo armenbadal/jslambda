@@ -868,7 +868,16 @@ else {
 }
 ```
 
+## Gradaranner
 
+_Լամբդա_ լեզվի գրադարանները սահմանվում են հետևյալ քերականությամբ.
+
+```
+library
+    = 'library' IDENT 'defines' binding {'and' binding}.
+binding
+    = IDENT 'as' expression.
+```
 
 ## Աղբյուրներ
 

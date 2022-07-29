@@ -4,7 +4,7 @@
 const Parser = function () {
   // Լեզվի ծառայողական բառերի ցուցակը
   this.keywords = ['if', 'then', 'else', 'lambda', 'apply',
-    'to', 'let', 'is', 'in', 'and']
+    'to', 'let', 'is', 'in', 'and', 'library', 'defines', 'as']
 
   // անվանված գործողություններ
   this.operations = ['cons', 'head', 'tail', 'length']
@@ -309,6 +309,35 @@ Parser.prototype.expression = function () {
   // բոլոր այլ դեպքերում ազդարարել շարահյուսական սխալի մասին
   throw new Error(`Syntax error. Expression cannot start with '${this.head()}'.`)
 }
+
+// Գրադարանի սահմանում
+Parser.prototype.library = function () {
+    let libr = {
+        name: '',
+        items: {}
+    }
+
+    if (this.have('LIBRARY')) {
+        this.next()
+        libr.name = this.match('IDENT')
+        this.match('DEFINES')
+
+        const bindings = [this.binding('AS')]
+        while (this.have('AND')) {
+            this.next()
+            bindings.push(this.binding('AS'))
+        }
+    }
+}
+
+// մեկ կապի վերլուծությունը
+Parser.prototype.binding = function (kw) {
+    const name = this.match('IDENT')
+    this.match(kw)
+    const value = this.expression()
+    return { name, value }
+}
+
 
 // ծրագրի տեքստի վերլուծություն
 Parser.prototype.parse = function (text) {
